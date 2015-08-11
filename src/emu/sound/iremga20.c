@@ -29,6 +29,7 @@ Revisions:
 *********************************************************/
 
 #include "emu.h"
+#include "vgmwrite.h"
 #include "iremga20.h"
 
 #define MAX_VOL 256
@@ -74,6 +75,9 @@ void iremga20_device::device_start()
 		m_regs[i] = 0;
 
 	m_stream = stream_alloc(0, 2, clock()/4);
+
+	m_vgm_idx = vgm_open(VGMC_GA20, clock());
+	vgm_write_large_data(m_vgm_idx, 0x01, m_rom_size, 0x00, 0x00, m_rom);
 
 	save_item(NAME(m_regs));
 	for (i = 0; i < 4; i++)
@@ -189,6 +193,7 @@ WRITE8_MEMBER( iremga20_device::irem_ga20_w )
 
 	m_stream->update();
 
+	vgm_write(m_vgm_idx, 0x00, offset, data);
 	channel = offset >> 3;
 
 	m_regs[offset] = data;

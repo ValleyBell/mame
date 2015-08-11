@@ -16,6 +16,7 @@
  */
 
 #include "emu.h"
+#include "vgmwrite.h"
 #include "c352.h"
 
 #define VERBOSE (0)
@@ -368,6 +369,8 @@ void c352_device::write_reg16(unsigned long address, unsigned short val)
 
 	m_stream->update();
 
+	vgm_write(m_vgm_idx, (address >> 9) & 0xFF, val, (address >> 1) & 0xFF);
+
 	chan = (address >> 4) & 0xfff;
 
 	if ( address >= 0x400 )
@@ -493,6 +496,10 @@ void c352_device::device_start()
 	m_sample_rate_base = clock() / divider;
 
 	m_stream = machine().sound().stream_alloc(*this, 0, 4, m_sample_rate_base);
+
+	m_vgm_idx = vgm_open(VGMC_C352, clock());
+	vgm_header_set(m_vgm_idx, 0x01, divider);
+	vgm_write_large_data(m_vgm_idx, 0x01, region()->bytes(), 0x00, 0x00, region()->base());
 
 	// generate mulaw table for mulaw format samples
 	for (i = 0; i < 256; i++)

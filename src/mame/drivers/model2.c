@@ -2292,7 +2292,7 @@ WRITE16_MEMBER(model2_state::model2snd_ctrl)
 }
 
 static ADDRESS_MAP_START( model2_snd, AS_PROGRAM, 16, model2_state )
-	AM_RANGE(0x000000, 0x07ffff) AM_RAM AM_REGION("audiocpu", 0) AM_SHARE("soundram")
+	AM_RANGE(0x000000, 0x07ffff) AM_RAM AM_REGION("audiocpu", 0) AM_SHARE("soundram") AM_DEVWRITE("scsp", scsp_device, scsp_mem_w)
 	AM_RANGE(0x100000, 0x100fff) AM_DEVREADWRITE("scsp", scsp_device, read, write)
 	AM_RANGE(0x400000, 0x400001) AM_WRITE(model2snd_ctrl)
 	AM_RANGE(0x600000, 0x67ffff) AM_ROM AM_REGION("audiocpu", 0x80000)

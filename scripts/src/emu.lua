@@ -253,6 +253,8 @@ files {
 	MAME_DIR .. "src/emu/sound/flt_vol.h",
 	MAME_DIR .. "src/emu/sound/flt_rc.c",
 	MAME_DIR .. "src/emu/sound/flt_rc.h",
+	MAME_DIR .. "src/emu/sound/vgmwrite.c",
+	MAME_DIR .. "src/emu/sound/vgmwrite.h",
 	MAME_DIR .. "src/emu/sound/wavwrite.c",
 	MAME_DIR .. "src/emu/sound/wavwrite.h",
 	MAME_DIR .. "src/emu/sound/samples.c",

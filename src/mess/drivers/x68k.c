@@ -594,8 +594,10 @@ WRITE8_MEMBER(x68k_state::ppi_port_c_w)
 		m_adpcm.pan = data & 0x03;
 		m_adpcm.rate = data & 0x0c;
 		x68k_set_adpcm();
-		m_okim6258->set_divider((data >> 2) & 3);
+		//m_okim6258->set_divider((data >> 2) & 3);
 	}
+	m_okim6258->okim6258_pan_w(space,0,data & 0x03);
+	m_okim6258->set_divider((data >> 2) & 3);
 
 	// The joystick enable bits also handle the multiplexer for various controllers
 	m_joy.joy1_enable = data & 0x10;
@@ -1707,8 +1709,10 @@ static MACHINE_CONFIG_START( x68000, x68k_state )
 	MCFG_OKIM6258_DIVIDER(FOSC_DIV_BY_512)
 	MCFG_OKIM6258_ADPCM_TYPE(TYPE_4BITS)
 	MCFG_OKIM6258_OUT_BITS(OUTPUT_10BITS)
-	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "lspeaker", 0.50)
-	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "rspeaker", 0.50)
+	//MCFG_SOUND_ROUTE(ALL_OUTPUTS, "lspeaker", 0.50)
+	//MCFG_SOUND_ROUTE(ALL_OUTPUTS, "rspeaker", 0.50)
+	MCFG_SOUND_ROUTE(0, "lspeaker", 0.50)
+	MCFG_SOUND_ROUTE(1, "rspeaker", 0.50)
 
 	MCFG_UPD72065_ADD("upd72065", true, false)
 	MCFG_UPD765_INTRQ_CALLBACK(WRITELINE(x68k_state, fdc_irq))

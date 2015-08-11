@@ -46,6 +46,7 @@ Unmapped registers:
 
 
 #include "emu.h"
+#include "vgmwrite.h"
 #include "c140.h"
 
 struct voice_registers
@@ -134,6 +135,19 @@ void c140_device::device_start()
 	/* allocate a pair of buffers to mix into - 1 second's worth should be more than enough */
 	m_mixer_buffer_left = auto_alloc_array(machine(), INT16, 2 * m_sample_rate);
 	m_mixer_buffer_right = m_mixer_buffer_left + m_sample_rate;
+
+	m_vgm_idx = vgm_open(VGMC_C140, m_baserate);
+	vgm_header_set(m_vgm_idx, 0x01, m_banking_type);
+	if (m_pRom != NULL)
+	{
+		vgm_write_large_data(m_vgm_idx, 0x01, region()->bytes(), 0x00, 0x00, m_pRom);
+	}
+	else
+	{
+		logerror("VGM Warning: C140 wants to use dynamic memory (i.e. RAM)!\n");
+		//logerror("VGM Warning: C140 wants to use dynamic memory (i.e. RAM) - disabled C140 logging!\n");
+		//m_vgm_idx = 0xFFFF;
+	}
 
 	save_item(NAME(m_REG));
 
@@ -373,6 +387,8 @@ WRITE8_MEMBER( c140_device::c140_w )
 
 	offset&=0x1ff;
 
+	vgm_write(m_vgm_idx, 0x00, offset, data);
+
 	// mirror the bank registers on the 219, fixes bkrtmaq (and probably xday2 based on notes in the HLE)
 	if ((offset >= 0x1f8) && (m_banking_type == C140_TYPE_ASIC219))
 	{
@@ -432,6 +448,8 @@ WRITE8_MEMBER( c140_device::c140_w )
 void c140_device::set_base(void *base)
 {
 	m_pRom = (INT8 *)base;
+	//logerror("VGM Warning: C140 uses Dynamic Memory!\n");
+	//vgm_write_large_data(m_vgm_idx, 0x01, region()->bytes(), 0x00, 0x00, m_pRom);
 }
 
 

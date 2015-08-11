@@ -66,6 +66,7 @@ public:
 	// runtime configuration
 	void set_bank_base(offs_t base, bool bDontUpdateStream = false);
 	void set_pin7(int pin7);
+	UINT16 get_vgm_idx();
 
 	UINT8 read_status();
 	void write_command(UINT8 command);
@@ -116,6 +117,8 @@ protected:
 	direct_read_data *  m_direct;
 
 	static const UINT8 s_volume_table[16];
+
+	UINT16 m_vgm_idx;
 };
 
 

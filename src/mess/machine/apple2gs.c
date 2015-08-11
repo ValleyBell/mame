@@ -126,6 +126,7 @@
 #include "imagedev/flopdrv.h"
 #include "cpu/g65816/g65816.h"
 #include "sound/es5503.h"
+#include "sound/vgmwrite.h"
 #include "machine/ram.h"
 #include "debugger.h"
 
@@ -838,6 +839,7 @@ WRITE8_MEMBER( apple2gs_state::gssnd_w )
 			if (m_sndglu_ctrl & 0x40)    // docram access
 			{
 				UINT8 *docram = memregion("es5503")->base();
+				vgm_write(m_sndglu_vgm_idx, 0x80, m_sndglu_addr, data);
 				docram[m_sndglu_addr] = data;
 			}
 			else
@@ -1951,6 +1953,7 @@ MACHINE_RESET_MEMBER(apple2gs_state,apple2gs)
 	m_sndglu_ctrl = 0x00;
 	m_sndglu_addr = 0;
 	m_sndglu_dummy_read = 0;
+	m_sndglu_vgm_idx = vgm_get_chip_idx(VGMC_ES5503, 0);
 
 	m_adb_dtime = 0;
 	m_last_adb_time = 0;

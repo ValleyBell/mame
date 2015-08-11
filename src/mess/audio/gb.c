@@ -43,6 +43,7 @@
 
 #include "emu.h"
 #include "gb.h"
+#include "sound/vgmwrite.h"
 
 
 /***************************************************************************
@@ -129,6 +130,10 @@ void gameboy_sound_device::device_start()
 {
 	m_channel = machine().sound().stream_alloc(*this, 0, 2, machine().sample_rate());
 	m_rate = machine().sample_rate();
+
+	// clock() is 0
+	m_clock = clock() ? clock() : 4194304;
+	m_vgm_idx = vgm_open(VGMC_GBSOUND, m_clock);
 
 	save_item(NAME(m_snd_regs));
 	// sound control
@@ -330,6 +335,7 @@ READ8_MEMBER( gameboy_sound_device::sound_r )
 
 WRITE8_MEMBER( gameboy_sound_device::wave_w )
 {
+	vgm_write(m_vgm_idx, 0x00, AUD3W0 + offset, data);
 	m_snd_regs[AUD3W0 + offset] = data;
 }
 
@@ -337,6 +343,8 @@ WRITE8_MEMBER( gameboy_sound_device::sound_w )
 {
 	/* change in registers so update first */
 	m_channel->update();
+
+	vgm_write(m_vgm_idx, 0x00, offset, data);
 
 	/* Only register NR52 is accessible if the sound controller is disabled */
 	if (!m_snd_control.on && offset != NR52)

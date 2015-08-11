@@ -126,6 +126,8 @@ private:
 	int m_pan_left[16],m_pan_right[16]; // pan volume offsets
 	INT32 m_mix_level[8];
 
+	UINT16 m_vgm_idx;                 // VGM index
+
 	emu_timer *m_timer_a, *m_timer_b;
 	int m_clock;
 

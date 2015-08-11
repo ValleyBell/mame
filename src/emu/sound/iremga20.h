@@ -70,6 +70,7 @@ private:
 	sound_stream *m_stream;
 	UINT16 m_regs[0x40];
 	IremGA20_channel_def m_channel[4];
+	UINT16 m_vgm_idx;
 };
 
 extern const device_type IREMGA20;

@@ -124,6 +124,7 @@
 *************************************************************/
 
 #include "emu.h"
+#include "vgmwrite.h"
 #include "upd7759.h"
 
 
@@ -263,6 +264,22 @@ void upd7759_device::device_start()
 	/* toggle the reset line to finish the reset */
 	device_reset();
 
+	m_vgm_idx = vgm_open(VGMC_UPD7759, clock());
+	//vgm_header_set(m_vgm_idx, 0x01, m_sample_offset_shift);	// set uPD7759/56 mode
+	if (m_rombase == NULL)
+	{
+		/* slave mode */
+		if (m_vgm_idx != 0xFFFF)
+			logerror("Note: Logging UPD7759 in Slave Mode!\n");
+		vgm_header_set(m_vgm_idx, 0x00, 0x01);
+	}
+	else
+	{
+		/* master/standalone mode */
+		vgm_header_set(m_vgm_idx, 0x00, 0x00);
+		vgm_write_large_data(m_vgm_idx, 0x01, region()->bytes(), 0x00, 0x00, m_rombase);
+	}
+
 	save_item(NAME(m_pos));
 	save_item(NAME(m_step));
 
@@ -339,6 +356,22 @@ void upd7756_device::device_start()
 
 	/* toggle the reset line to finish the reset */
 	device_reset();
+
+	m_vgm_idx = vgm_open(VGMC_UPD7759, clock());
+	//vgm_header_set(m_vgm_idx, 0x01, m_sample_offset_shift);	// set uPD7759/56 mode
+	if (m_rombase == NULL)
+	{
+		/* slave mode */
+		if (m_vgm_idx != 0xFFFF)
+			logerror("Note: Logging UPD7759 in Slave Mode!\n");
+		vgm_header_set(m_vgm_idx, 0x00, 0x01);
+	}
+	else
+	{
+		/* master/standalone mode */
+		vgm_header_set(m_vgm_idx, 0x00, 0x00);
+		vgm_write_large_data(m_vgm_idx, 0x01, region()->bytes(), 0x00, 0x00, m_rombase);
+	}
 
 	save_item(NAME(m_pos));
 	save_item(NAME(m_step));
@@ -730,7 +763,7 @@ void upd7759_device::device_timer(emu_timer &timer, device_timer_id id, int para
 		advance_state();
 
 		/* if the DRQ changed, update it */
-		logerror("upd7759_slave_update: DRQ %d->%d\n", olddrq, m_drq);
+		//logerror("upd7759_slave_update: DRQ %d->%d\n", olddrq, m_drq);
 		if (olddrq != m_drq)
 			m_drqcallback(m_drq);
 
@@ -771,6 +804,8 @@ WRITE_LINE_MEMBER( upd775x_device::reset_w )
 	/* update the stream first */
 	m_channel->update();
 
+	vgm_write(m_vgm_idx, 0x00, 0x00, state);
+
 	/* on the falling edge, reset everything */
 	if (oldreset && !m_reset)
 		device_reset();
@@ -786,6 +821,8 @@ WRITE_LINE_MEMBER( upd7759_device::start_w )
 
 	/* update the stream first */
 	m_channel->update();
+
+	vgm_write(m_vgm_idx, 0x00, 0x01, state);
 
 	/* on the rising edge, if we're idle, start going, but not if we're held in reset */
 	if (m_state == STATE_IDLE && !oldstart && m_start && m_reset)
@@ -806,6 +843,8 @@ WRITE_LINE_MEMBER( upd7756_device::start_w )
 
 	logerror("upd7759_start_w: %d->%d\n", oldstart, m_start);
 
+	vgm_write(m_vgm_idx, 0x00, 0x01, state);
+
 	/* update the stream first */
 	m_channel->update();
 
@@ -819,6 +858,8 @@ WRITE_LINE_MEMBER( upd7756_device::start_w )
 
 WRITE8_MEMBER( upd775x_device::port_w )
 {
+	vgm_write(m_vgm_idx, 0x00, 0x02, data);
+	
 	if (m_rombase != NULL)
 	{
 		/* update the FIFO value */
@@ -844,6 +885,8 @@ void upd775x_device::set_bank_base(UINT32 base)
 	assert(m_rombase != NULL);
 	m_rom = m_rombase + base;
 	m_romoffset = base;
+
+	vgm_write(m_vgm_idx, 0x00, 0x03, base / 0x20000);
 }
 
 UINT8 upd775x_device::get_fifo_space()

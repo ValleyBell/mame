@@ -2266,7 +2266,7 @@ static MACHINE_CONFIG_START( gbadv, gba_state )
 	MCFG_PALETTE_INIT_OWNER(gba_state, gba)
 
 	MCFG_SPEAKER_STANDARD_STEREO("spkleft", "spkright")
-	MCFG_SOUND_ADD("custom", GAMEBOY, 0)
+	MCFG_SOUND_ADD("custom", GAMEBOY, 16777216/4)
 	MCFG_SOUND_ROUTE(0, "spkleft", 0.50)
 	MCFG_SOUND_ROUTE(1, "spkright", 0.50)
 	MCFG_SOUND_ADD("direct_a_left", DAC, 0)         // GBA direct sound A left

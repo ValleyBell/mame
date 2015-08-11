@@ -24,6 +24,7 @@
 
 #include "emu.h"
 #include "ymf271.h"
+#include "vgmwrite.h"
 
 #define STD_CLOCK       (16934400)
 
@@ -1430,6 +1431,8 @@ WRITE8_MEMBER( ymf271_device::write )
 	m_stream->update();
 
 	m_regs_main[offset & 0xf] = data;
+	if (offset & 0x01)
+		vgm_write(m_vgm_idx, offset >> 1, m_regs_main[offset & 0x0E], data);
 
 	switch (offset & 0xf)
 	{
@@ -1715,6 +1718,9 @@ void ymf271_device::device_start()
 
 	init_tables();
 	init_state();
+
+	m_vgm_idx = vgm_open(VGMC_YMF271, m_clock);
+	vgm_write_large_data(m_vgm_idx, 0x01, m_mem_size, 0x00, 0x00, m_mem_base);
 
 	m_stream = machine().sound().stream_alloc(*this, 0, 2, clock()/384);
 	m_mix_buffer = auto_alloc_array(machine(), INT32, 44100*2);

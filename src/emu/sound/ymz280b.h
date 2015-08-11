@@ -122,6 +122,7 @@ private:
 	UINT32 m_mem_size;
 	sound_stream *m_stream;           /* which stream are we using */
 	INT16 *m_scratch;
+	UINT16 m_vgm_idx;                 /* VGM index */
 #if MAKE_WAVS
 	void *m_wavresample;              /* resampled waveform */
 #endif

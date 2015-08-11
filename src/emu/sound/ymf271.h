@@ -150,6 +150,7 @@ private:
 	UINT8 *m_mem_base;
 	UINT32 m_mem_size;
 	UINT32 m_clock;
+	UINT16 m_vgm_idx;
 
 	emu_timer *m_timA, *m_timB;
 	sound_stream *m_stream;

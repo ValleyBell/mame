@@ -94,6 +94,8 @@ private:
 	int output_channels;
 	UINT32 output_rate;
 
+	UINT16 m_vgm_idx;
+
 	emu_timer *m_timer;
 
 	direct_read_data *m_direct;

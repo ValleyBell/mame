@@ -159,6 +159,7 @@ public:
 	UINT8 m_sndglu_ctrl;
 	int m_sndglu_addr;
 	int m_sndglu_dummy_read;
+	UINT8 m_sndglu_vgm_idx;
 	bitmap_ind16 *m_legacy_gfx;
 	bool m_is_rom3;
 	UINT8 m_echo_bank;

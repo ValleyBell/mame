@@ -57,6 +57,7 @@ differences between OPL2 and OPL3 shown in datasheets:
 
 #include "emu.h"
 #include "ymf262.h"
+#include "vgmwrite.h"
 
 
 
@@ -261,6 +262,7 @@ struct OPL3
 	UINT8   st[2];                  /* timer enable                 */
 
 	UINT32  address;                /* address register             */
+	UINT32  addressa;               /* address register             */
 	UINT8   status;                 /* status flag                  */
 	UINT8   statusmask;             /* status mask                  */
 
@@ -280,6 +282,7 @@ struct OPL3
 	double freqbase;                /* frequency base               */
 	attotime TimerBase;         /* Timer base time (==sampling time)*/
 	device_t *device;
+	UINT16 vgm_idx;                 /* VGM index */
 };
 
 
@@ -2338,6 +2341,7 @@ static void OPL3ResetChip(OPL3 *chip)
 static OPL3 *OPL3Create(device_t *device, int clock, int rate, int type)
 {
 	OPL3 *chip;
+	int opl4_vgm_idx;
 
 	if (OPL3_LockTable(device) == -1) return NULL;
 
@@ -2354,6 +2358,11 @@ static OPL3 *OPL3Create(device_t *device, int clock, int rate, int type)
 
 	/* reset chip */
 	OPL3ResetChip(chip);
+	opl4_vgm_idx = vgm_get_chip_idx(VGMC_YMF278B, 0);
+	if (opl4_vgm_idx == 0xFFFF)
+		chip->vgm_idx = vgm_open(VGMC_YMF262, chip->clock);
+	else
+		chip->vgm_idx = 0xFFFF;	// prevent OPL3+OPL4 (fixes workaround for "Fuuki 32 Bit Games")
 	return chip;
 }
 
@@ -2393,11 +2402,13 @@ static int OPL3Write(OPL3 *chip, int a, int v)
 	{
 	case 0: /* address port 0 (register set #1) */
 		chip->address = v;
+		chip->addressa = v;
 	break;
 
 	case 1: /* data port - ignore A1 */
 	case 3: /* data port - ignore A1 */
 		if(chip->UpdateHandler) chip->UpdateHandler(chip->UpdateParam,0);
+		vgm_write(chip->vgm_idx, chip->addressa >> 8, chip->addressa & 0xFF, v);
 		OPL3WriteReg(chip,chip->address,v);
 	break;
 
@@ -2425,6 +2436,7 @@ static int OPL3Write(OPL3 *chip, int a, int v)
 			else
 				chip->address = v;  /* verified range: 0x01, 0x04, 0x20-0xef(set #2 becomes set #1 in opl2 mode) */
 		}
+		chip->addressa = v | 0x100;
 	break;
 	}
 

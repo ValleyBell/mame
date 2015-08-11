@@ -34,6 +34,7 @@
 
 #include "emu.h"
 #include "es5503.h"
+#include "vgmwrite.h"
 
 // device type definition
 const device_type ES5503 = &device_creator<es5503_device>;
@@ -254,6 +255,11 @@ void es5503_device::device_start()
 
 	m_timer = timer_alloc(0, NULL);
 	m_timer->adjust(attotime::from_hz(output_rate), 0, attotime::from_hz(output_rate));
+	
+	m_vgm_idx = vgm_open(VGMC_ES5503, clock());
+	vgm_header_set(m_vgm_idx, 0x01, output_channels);
+	vgm_write_large_data(m_vgm_idx, 0x01, 0x20000, 0x00, 0x00, m_direct->ptr());
+	
 }
 
 void es5503_device::device_reset()
@@ -375,6 +381,8 @@ READ8_MEMBER( es5503_device::read )
 WRITE8_MEMBER( es5503_device::write )
 {
 	m_stream->update();
+
+	vgm_write(m_vgm_idx, 0x00, offset, data);
 
 	if (offset < 0xe0)
 	{

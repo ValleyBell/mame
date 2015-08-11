@@ -84,6 +84,7 @@ private:
 	UINT8   m_external_speaker;   /* external speaker */
 	UINT16  m_noise_shift;        /* Noise counter shift register */
 	UINT8   m_master_volume;      /* Master volume */
+	UINT16  m_vgm_idx;            /* VGM index */
 };
 
 extern const device_type WSWAN_SND;

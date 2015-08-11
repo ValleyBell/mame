@@ -84,6 +84,7 @@ Ensoniq OTIS - ES5505                                            Ensoniq OTTO - 
 
 #include "emu.h"
 #include "es5506.h"
+#include "vgmwrite.h"
 
 
 /**********************************************************************************************
@@ -199,6 +200,30 @@ void es5506_device::device_start()
 	m_region_base[1] = m_region1 ? (UINT16 *)machine().root_device().memregion(m_region1)->base() : NULL;
 	m_region_base[2] = m_region2 ? (UINT16 *)machine().root_device().memregion(m_region2)->base() : NULL;
 	m_region_base[3] = m_region3 ? (UINT16 *)machine().root_device().memregion(m_region3)->base() : NULL;
+
+	m_vgm_idx = vgm_open(VGMC_ES5506, clock());
+	vgm_header_set(m_vgm_idx, 0x00, 0x01);	// ES5506 mode
+	vgm_header_set(m_vgm_idx, 0x01, m_channels);
+	if (m_region0 != NULL)
+	{
+		logerror("ES5506 Region0 %s size: %u\n", m_region0, machine().root_device().memregion(m_region0)->bytes());
+		vgm_write_large_data(m_vgm_idx, 0x00, machine().root_device().memregion(m_region0)->bytes(), 0x00, 0x00, m_region_base[0]);
+	}
+	if (m_region1 != NULL)
+	{
+		logerror("ES5506 Region1 %s size: %u\n", m_region1, machine().root_device().memregion(m_region1)->bytes());
+		vgm_write_large_data(m_vgm_idx, 0x01, machine().root_device().memregion(m_region1)->bytes(), 0x00, 0x00, m_region_base[1]);
+	}
+	if (m_region2 != NULL)
+	{
+		logerror("ES5506 Region2 %s size: %u\n", m_region2, machine().root_device().memregion(m_region2)->bytes());
+		vgm_write_large_data(m_vgm_idx, 0x02, machine().root_device().memregion(m_region2)->bytes(), 0x00, 0x00, m_region_base[2]);
+	}
+	if (m_region3 != NULL)
+	{
+		logerror("ES5506 Region3 %s size: %u\n", m_region3, machine().root_device().memregion(m_region3)->bytes());
+		vgm_write_large_data(m_vgm_idx, 0x03, machine().root_device().memregion(m_region3)->bytes(), 0x00, 0x00, m_region_base[3]);
+	}
 
 	/* initialize the rest of the structure */
 	m_master_clock = clock();
@@ -339,6 +364,20 @@ void es5505_device::device_start()
 	/* initialize the regions */
 	m_region_base[0] = m_region0 ? (UINT16 *)machine().root_device().memregion(m_region0)->base() : NULL;
 	m_region_base[1] = m_region1 ? (UINT16 *)machine().root_device().memregion(m_region1)->base() : NULL;
+
+	m_vgm_idx = vgm_open(VGMC_ES5506, clock());
+	vgm_header_set(m_vgm_idx, 0x00, 0x00);	// ES5505 mode
+	vgm_header_set(m_vgm_idx, 0x01, m_channels);
+	if (m_region0 != NULL)
+	{
+		logerror("ES5505 Region0 %s size: %u\n", m_region0, machine().root_device().memregion(m_region0)->bytes());
+		vgm_write_large_data(m_vgm_idx, 0x00, machine().root_device().memregion(m_region0)->bytes(), 0x00, 0x00, m_region_base[0]);
+	}
+	if (m_region1 != NULL)
+	{
+		logerror("ES5505 Region1 %s size: %u\n", m_region1, machine().root_device().memregion(m_region1)->bytes());
+		vgm_write_large_data(m_vgm_idx, 0x01, machine().root_device().memregion(m_region1)->bytes(), 0x00, 0x00, m_region_base[1]);
+	}
 
 	/* initialize the rest of the structure */
 	m_master_clock = clock();
@@ -1073,7 +1112,7 @@ void es5505_device::generate_samples(INT32 **outputs, int offset, int samples)
 		/* generate from the appropriate source */
 		if (!base)
 		{
-			logerror("es5506: NULL region base %d\n",voice->control >> 14);
+			//logerror("es5506: NULL region base %d\n",voice->control >> 14);
 			generate_dummy(voice, base, left, right, samples);
 		}
 		else if (voice->control & 0x2000)
@@ -1375,9 +1414,24 @@ WRITE8_MEMBER( es5506_device::write )
 {
 	es550x_voice *voice = &m_voice[m_current_page & 0x1f];
 	int shift = 8 * (offset & 3);
+	static int lastofs = -1;
 
+	//vgm_write(m_vgm_idx, 0x00, offset, data);
+	
 	/* accumulate the data */
 	m_write_latch = (m_write_latch & ~(0xff000000 >> shift)) | (data << (24 - shift));
+	if (offset & 1)
+	{
+		UINT16 logdata;
+		
+		if (lastofs != -1 && lastofs != offset-1)
+			logerror("ES5506: Last Offset %02X, New Offset %02X\n", lastofs, offset);
+		logdata = (offset & 2) ? (m_write_latch & 0xFFFF) : (m_write_latch >> 16);
+		vgm_write(m_vgm_idx, 0x80, logdata, offset & ~1);
+	}
+	else if (lastofs != -1 && ! (lastofs & 1))
+		logerror("ES5506: Last Offset %02X, New Offset %02X\n", lastofs, offset);
+	lastofs = offset;
 
 	/* wait for a write to complete */
 	if (shift != 24)
@@ -1612,6 +1666,7 @@ READ8_MEMBER( es5506_device::read )
 
 void es5506_device::voice_bank_w(int voice, int bank)
 {
+	vgm_write(m_vgm_idx, 0x00, 0x40 | voice, bank >> 20);
 	m_voice[voice].exbank=bank;
 }
 
@@ -1931,6 +1986,13 @@ WRITE16_MEMBER( es5505_device::write )
 
 //  logerror("%s:ES5505 write %02x/%02x = %04x & %04x\n", machine().describe_context(), m_current_page, offset, data, mem_mask);
 
+	if (ACCESSING_BITS_0_7 && ACCESSING_BITS_8_15)
+		vgm_write(m_vgm_idx, 0x80, data, offset*2);
+	else if (ACCESSING_BITS_8_15)
+		vgm_write(m_vgm_idx, 0x00, offset*2 + 0, (data & 0xFF00) >> 8);
+	else if (ACCESSING_BITS_0_7)
+		vgm_write(m_vgm_idx, 0x00, offset*2 + 1, (data & 0x00FF) >> 0);
+
 	/* force an update */
 	m_stream->update();
 
@@ -2166,6 +2228,7 @@ READ16_MEMBER( es5505_device::read )
 
 void es5505_device::voice_bank_w(int voice, int bank)
 {
+	vgm_write(m_vgm_idx, 0x00, 0x40 | voice, bank >> 20);
 #if RAINE_CHECK
 	m_voice[voice].control = CONTROL_STOPMASK;
 #endif

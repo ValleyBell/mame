@@ -61,6 +61,8 @@ private:
 	UINT8 m_fds_sides;
 	int m_fds_last_side;
 	int m_fds_count;
+	
+	UINT16 m_vgm_idx;
 };
 
 

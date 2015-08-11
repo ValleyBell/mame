@@ -55,6 +55,7 @@
 #include "machine/nvram.h"
 #include "cpu/z80/z80.h"
 #include "sound/2610intf.h"
+#include "sound/vgmwrite.h"
 #include "imagedev/chd_cd.h"
 #include "sound/cdda.h"
 #include "machine/megacdcd.h"
@@ -211,6 +212,10 @@ protected:
 
 	void common_machine_start();
 	INT32 SekIdle(INT32 nCycles);
+
+	UINT16 m_vgm_idx_2610;
+	UINT32 m_pcmt_addr_start;	// PCM transfer variables
+	UINT32 m_pcmt_addr_end;
 };
 
 
@@ -362,6 +367,8 @@ WRITE16_MEMBER(ng_aes_state::neocd_control_w)
 		case 0x0122:
 //          bprintf(PRINT_NORMAL, _T("  - NGCD PCM BUSREQ -> 1 (PC: 0x%06X) %x\n"), SekGetPC(-1), byteValue);
 			m_has_ymrom_bus = false;
+			m_pcmt_addr_start = 0xFFFFFFFF;
+			m_pcmt_addr_end = 0xFFFFFFFF;
 			break;
 		case 0x0126:
 //          bprintf(PRINT_NORMAL, _T("  - NGCD Z80 BUSREQ -> 1 (PC: 0x%06X)\n"), SekGetPC(-1));
@@ -381,6 +388,16 @@ WRITE16_MEMBER(ng_aes_state::neocd_control_w)
 		case 0x0142:
 //          bprintf(PRINT_NORMAL, _T("  - NGCD PCM BUSREQ -> 0 (PC: 0x%06X)\n"), SekGetPC(-1));
 			m_has_ymrom_bus = true;
+			{
+				UINT32 RAMSize;
+				void* RAMData;
+				UINT32 DataLen;
+				
+				RAMSize = memregion("ymsnd")->bytes();
+				RAMData = YM2610ADPCMAROM;
+				DataLen = m_pcmt_addr_end + 1 - m_pcmt_addr_start;
+				vgm_write_large_data(m_vgm_idx_2610, 0x01, RAMSize, m_pcmt_addr_start, DataLen, RAMData);
+			}
 			break;
 		case 0x0146:
 //          bprintf(PRINT_NORMAL, _T("  - NGCD Z80 BUSREQ -> 0 (PC: 0x%06X)\n"), SekGetPC(-1));
@@ -538,6 +555,10 @@ WRITE8_MEMBER(ng_aes_state::neocd_transfer_w)
 			break;
 		case 1:                         // ADPCM
 			YM2610ADPCMAROM[nADPCMTransferBank + ((sekAddress & 0x0FFFFF) >> 1)] = byteValue;
+
+			m_pcmt_addr_end = nADPCMTransferBank + ((sekAddress & 0x0FFFFF) >> 1);
+			if (m_pcmt_addr_start == 0xFFFFFFFF)
+				m_pcmt_addr_start = m_pcmt_addr_end;
 			break;
 		case 4:                         // Z80
 
@@ -1058,6 +1079,8 @@ MACHINE_START_MEMBER(ng_aes_state,neocd)
 	machine().device<nvram_device>("saveram")->set_base(m_meminternal_data, 0x2000);
 	save_pointer(NAME(m_meminternal_data), 0x2000);
 
+	m_vgm_idx_2610 = vgm_get_chip_idx(VGMC_YM2610, 0);
+
 	//m_bank_vectors->set_entry(0); // default to the BIOS vectors
 	m_use_cart_vectors = 0;
 
@@ -1084,6 +1107,8 @@ MACHINE_RESET_MEMBER(ng_aes_state,neogeo)
 	m_audio_cpu_nmi_enabled = false;
 	m_audio_cpu_nmi_pending = false;
 	audio_cpu_check_nmi();
+
+	m_vgm_idx_2610 = vgm_get_chip_idx(VGMC_YM2610, 0);
 
 	m_maincpu->reset();
 

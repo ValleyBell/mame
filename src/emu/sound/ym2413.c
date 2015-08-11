@@ -41,6 +41,7 @@ to do:
 
 #include "emu.h"
 #include "ym2413.h"
+#include "vgmwrite.h"
 
 
 
@@ -270,6 +271,8 @@ struct YM2413
 	int rate;                       /* sampling rate (Hz)           */
 	double freqbase;                /* frequency base               */
 	device_t *device;
+
+	UINT16 vgm_idx;                 /* VGM index */
 
 	signed int output[2];
 	signed int outchan;
@@ -2019,6 +2022,9 @@ static YM2413 *OPLLCreate(device_t *device, int clock, int rate)
 
 	/* reset chip */
 	OPLLResetChip(chip);
+
+	chip->vgm_idx = vgm_open(VGMC_YM2413, chip->clock);
+
 	return chip;
 }
 
@@ -2047,6 +2053,7 @@ static void OPLLWrite(YM2413 *chip,int a,int v)
 	else
 	{   /* data port */
 		if(chip->UpdateHandler) chip->UpdateHandler(chip->UpdateParam,0);
+		vgm_write(chip->vgm_idx, 0x00, chip->address, v);
 		OPLLWriteReg(chip,chip->address,v);
 	}
 }

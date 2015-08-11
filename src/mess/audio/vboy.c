@@ -9,6 +9,7 @@
 
 #include "emu.h"
 #include "vboy.h"
+#include "sound/vgmwrite.h"
 
 // device type definition
 const device_type VBOYSND = &device_creator<vboysnd_device>;
@@ -226,6 +227,8 @@ void vboysnd_device::device_start()
 
 	m_timer = timer_alloc(0, NULL);
 	m_timer->adjust(attotime::zero, 0, attotime::from_hz(AUDIO_FREQ/4));
+	
+	m_vgm_idx = vgm_open(VGMC_VSU, 5000000);
 }
 
 
@@ -401,6 +404,7 @@ WRITE8_MEMBER( vboysnd_device::write )
 	int volReg, intervalReg;
 	int channel, ouroffs;
 
+	vgm_write(m_vgm_idx, 0x00, offset >> 2, data);
 	mputb((UINT8 *)m_aram+offset, data);
 	if (offset < 0x400)
 		return;

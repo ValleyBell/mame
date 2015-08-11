@@ -158,6 +158,8 @@ protected:
 
 	INT16 *     m_ulaw_lookup;
 	UINT16 *    m_volume_lookup;
+	
+	UINT16      m_vgm_idx;
 
 	#if MAKE_WAVS
 	void *      m_wavraw;                 /* raw waveform */

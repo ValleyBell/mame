@@ -142,6 +142,7 @@ public:
 	UINT8 m_lch_index_r, m_rch_index_r, m_lch_index_w, m_rch_index_w;
 	UINT16 m_lch_fifo_state, m_rch_fifo_state;
 
+	UINT16 m_vgm_idx;
 
 	UINT16 get_hposition(void);
 

@@ -53,6 +53,7 @@ Registers:
 
 #include "emu.h"
 #include "x1_010.h"
+#include "vgmwrite.h"
 
 
 #define VERBOSE_SOUND 0
@@ -122,6 +123,9 @@ void x1_010_device::device_start()
 	/* get stream channels */
 	m_stream = machine().sound().stream_alloc(*this, 0, 2, m_rate);
 
+	m_vgm_idx = vgm_open(VGMC_X1_010, m_base_clock);
+	vgm_write_large_data(m_vgm_idx, 0x01, region()->bytes(), 0x00, 0x00, region()->base());
+
 	save_item(NAME(m_rate));
 	save_item(NAME(m_sound_enable));
 	save_item(NAME(m_reg));
@@ -151,6 +155,7 @@ WRITE8_MEMBER( x1_010_device::write )
 	int channel, reg;
 	offset ^= m_adr;
 
+	vgm_write(m_vgm_idx, 0x00, offset, data);
 	channel = offset/sizeof(X1_010_CHANNEL);
 	reg     = offset%sizeof(X1_010_CHANNEL);
 

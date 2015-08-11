@@ -69,7 +69,8 @@ READ8_MEMBER(md_base_state::megadriv_68k_YM2612_read)
 	else
 	{
 		logerror("%s: 68000 attempting to access YM2612 (read) without bus\n", machine().describe_context());
-		return 0;
+//		return 0;
+		return 0x80;	// simulate a busy YM2612 (should effectively hang a waiting 68k, useful for debugging)
 	}
 
 	// never executed

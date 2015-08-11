@@ -117,6 +117,8 @@ private:
 	short m_mulaw_table[256];
 	unsigned int m_mseq_reg;
 	direct_read_data *m_direct;
+	
+	UINT16 m_vgm_idx;
 
 	// private functions
 	int get_mseq_bit(void);

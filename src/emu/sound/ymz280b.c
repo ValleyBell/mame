@@ -32,6 +32,7 @@
 
 #include "emu.h"
 #include "ymz280b.h"
+#include "vgmwrite.h"
 
 
 #define MAX_SAMPLE_CHUNK    10000
@@ -597,6 +598,9 @@ void ymz280b_device::device_start()
 	assert(MAX_SAMPLE_CHUNK < 0x10000);
 	m_scratch = auto_alloc_array(machine(), INT16, MAX_SAMPLE_CHUNK);
 
+	m_vgm_idx = vgm_open(VGMC_YMZ280B, clock());
+	vgm_write_large_data(m_vgm_idx, 0x01, m_mem_size, 0x00, 0x00, m_mem_base);
+
 	/* state save */
 	save_item(NAME(m_current_register));
 	save_item(NAME(m_status_register));
@@ -929,6 +933,7 @@ WRITE8_MEMBER( ymz280b_device::write )
 		/* force an update */
 		m_stream->update();
 
+		vgm_write(m_vgm_idx, 0x00, m_current_register, data);
 		write_to_register(data);
 	}
 }

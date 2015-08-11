@@ -81,6 +81,7 @@ private:
 	void sound_w_internal(int offset, UINT8 data);
 
 	sound_stream *m_channel;
+	int m_clock;
 	int m_rate;
 
 	INT32 m_env_length_table[8];
@@ -98,6 +99,8 @@ private:
 	struct SOUNDC m_snd_control;
 
 	UINT8 m_snd_regs[0x30];
+
+	UINT16 m_vgm_idx;
 };
 
 extern const device_type GAMEBOY;

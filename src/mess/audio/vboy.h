@@ -100,6 +100,8 @@ protected:
 	emu_timer *m_timer;
 
 	UINT8 m_aram[0x600];
+	
+	UINT16 m_vgm_idx;
 };
 
 // device type definition

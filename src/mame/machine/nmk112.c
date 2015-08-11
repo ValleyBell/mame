@@ -11,6 +11,8 @@
 
 #include "emu.h"
 #include "nmk112.h"
+#include "sound/okim6295.h"
+#include "sound/vgmwrite.h"
 
 #define TABLESIZE   0x100
 #define BANKSIZE    0x10000
@@ -40,15 +42,37 @@ void nmk112_device::device_start()
 	save_item(NAME(m_current_bank));
 	machine().save().register_postload(save_prepost_delegate(FUNC(nmk112_device::postload_bankswitch), this));
 
+	m_vgm_idx0 = 0xFFFF;
 	if (m_tag0)
 	{
 		m_rom0 = machine().root_device().memregion(m_tag0)->base();
 		m_size0 = machine().root_device().memregion(m_tag0)->bytes() - 0x40000;
+		if (m_rom0 != NULL)
+		{
+			m_vgm_idx0 = machine().device<okim6295_device>(m_tag0)->get_vgm_idx();
+			logerror("NMK112 '%s': VGM Idx %u\n", m_tag0, m_vgm_idx0);
+			if (m_page_mask & 0x01)
+				vgm_write(m_vgm_idx0, 0x00, 0x0E, 0x81);
+			else
+				vgm_write(m_vgm_idx0, 0x00, 0x0E, 0x01);
+			vgm_change_rom_data(m_size0 + 0x40000, m_rom0, m_size0, m_rom0 + 0x40000);
+		}
 	}
+	m_vgm_idx1 = 0xFFFF;
 	if (m_tag1)
 	{
 		m_rom1 = machine().root_device().memregion(m_tag1)->base();
 		m_size1 = machine().root_device().memregion(m_tag1)->bytes() - 0x40000;
+		if (m_rom1 != NULL)
+		{
+			m_vgm_idx1 = machine().device<okim6295_device>(m_tag1)->get_vgm_idx();
+			logerror("NMK112 '%s': VGM Idx %u\n", m_tag1, m_vgm_idx1);
+			if (m_page_mask & 0x02)
+				vgm_write(m_vgm_idx1, 0x00, 0x0E, 0x81);
+			else
+				vgm_write(m_vgm_idx1, 0x00, 0x0E, 0x01);
+			vgm_change_rom_data(m_size1 + 0x40000, m_rom1, m_size1, m_rom1 + 0x40000);
+		}
 	}
 }
 
@@ -100,6 +124,13 @@ void nmk112_device::do_bankswitch( int offset, int data )
 
 WRITE8_MEMBER( nmk112_device::okibank_w )
 {
+	UINT8 chip = (offset & 4) >> 2;
+	UINT8 banknum = offset & 3;
+	UINT16 vgm_idx = chip ? m_vgm_idx1 : m_vgm_idx0;
+
+	// I want the bank change always to be written to the VGM.
+	vgm_write(vgm_idx, 0x00, 0x10 | banknum, data);
+	
 	if (m_current_bank[offset] != data)
 		do_bankswitch(offset, data);
 }

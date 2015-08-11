@@ -199,6 +199,7 @@ GFX check (these don't explicitly fails):
 */
 #include "emu.h"
 #include "machine/mega32x.h"
+#include "sound/vgmwrite.h"
 
 
 const device_type SEGA_32X_NTSC = &device_creator<sega_32x_ntsc_device>;
@@ -884,6 +885,7 @@ READ16_MEMBER( sega_32x_device::_32x_pwm_r )
 
 WRITE16_MEMBER( sega_32x_device::_32x_pwm_w )
 {
+	vgm_write(m_vgm_idx, offset, data, 0x00);
 	switch(offset)
 	{
 		case 0x00/2:
@@ -1834,6 +1836,8 @@ void sega_32x_device::device_start()
 {
 	m_32x_pwm_timer = machine().scheduler().timer_alloc(FUNC(_32x_pwm_callback), (void*)this);
 	m_32x_pwm_timer->adjust(attotime::never);
+
+	m_vgm_idx = vgm_open(VGMC_PWM, PWM_CLOCK);
 
 	m_32x_dram0 = auto_alloc_array(machine(), UINT16, 0x40000/2);
 	m_32x_dram1 = auto_alloc_array(machine(), UINT16, 0x40000/2);

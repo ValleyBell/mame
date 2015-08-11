@@ -24,6 +24,7 @@
 #include "cpu/m6502/m6502.h"
 #include "imagedev/flopdrv.h"
 #include "formats/nes_dsk.h"
+#include "sound/vgmwrite.h"
 
 #ifdef NES_PCB_DEBUG
 	#define VERBOSE 1
@@ -161,6 +162,9 @@ void nes_disksys_device::pcb_reset()
 
 	m_fds_count = 0;
 	m_fds_last_side = 0;
+	
+	m_vgm_idx = vgm_get_chip_idx(VGMC_NESAPU, 0);
+	vgm_header_set(m_vgm_idx, 0x00, 0x01);	// enable FDS mode
 }
 
 
@@ -221,7 +225,12 @@ WRITE8_MEMBER(nes_disksys_device::write_ex)
 	if (offset >= 0x20 && offset < 0x60)
 	{
 		// wavetable
+		vgm_write(m_vgm_idx, 0x00, 0x20 + offset, data);	// 40..7F
 	}
+	else if (offset >= 0x60 && offset < 0x7F)
+		vgm_write(m_vgm_idx, 0x00, offset - 0x40, data);	// 20..3E
+	else if (offset == 0x03)
+		vgm_write(m_vgm_idx, 0x00, 0x3F, data);
 
 	switch (offset)
 	{

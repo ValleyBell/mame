@@ -74,6 +74,7 @@
 
 #include "emu.h"
 #include "saa1099.h"
+#include "vgmwrite.h"
 
 #define LEFT    0x00
 #define RIGHT   0x01
@@ -165,6 +166,8 @@ saa1099_device::saa1099_device(const machine_config &mconfig, const char *tag, d
 
 void saa1099_device::device_start()
 {
+	m_vgm_idx = vgm_open(VGMC_SAA1099, clock());
+
 	/* copy global parameters */
 	m_master_clock = clock();
 	m_sample_rate = clock() / 256;
@@ -375,6 +378,8 @@ WRITE8_MEMBER( saa1099_device::data_w )
 
 	/* first update the stream to this point in time */
 	m_stream->update();
+
+	vgm_write(m_vgm_idx, 0x00, reg & 0x7F, data);
 
 	switch (reg)
 	{

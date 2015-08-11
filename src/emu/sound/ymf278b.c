@@ -49,6 +49,7 @@
 #include "emu.h"
 #include "ymf278b.h"
 #include "ymf262.h"
+#include "vgmwrite.h"
 
 #define VERBOSE 0
 #define LOG(x) do { if (VERBOSE) logerror x; } while (0)
@@ -693,6 +694,7 @@ WRITE8_MEMBER( ymf278b_device::write )
 
 		case 1:
 		case 3:
+			vgm_write(m_vgm_idx, m_lastport, m_port_AB, data);
 			timer_busy_start(0);
 			if (m_lastport) B_w(m_port_AB, data);
 			else A_w(m_port_AB, data);
@@ -706,6 +708,7 @@ WRITE8_MEMBER( ymf278b_device::write )
 			break;
 
 		case 5:
+			vgm_write(m_vgm_idx, 0x02, m_port_C, data);
 			// PCM regs are only accessible if NEW2 is set
 			if (~m_exp & 2)
 				break;
@@ -978,6 +981,9 @@ void ymf278b_device::device_start()
 	m_timer_b = timer_alloc(TIMER_B);
 	m_timer_busy = timer_alloc(TIMER_BUSY_CLEAR);
 	m_timer_ld = timer_alloc(TIMER_LD_CLEAR);
+
+	m_vgm_idx = vgm_open(VGMC_YMF278B, m_clock);
+	vgm_write_large_data(m_vgm_idx, 0x01, region()->bytes(), 0x00, 0x00, region()->base());
 
 	for (i = 0; i < 24; i++)
 	{

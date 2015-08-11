@@ -774,7 +774,7 @@ static MACHINE_CONFIG_START( gameboy, gb_state )
 
 	/* sound hardware */
 	MCFG_SPEAKER_STANDARD_STEREO("lspeaker", "rspeaker")
-	MCFG_SOUND_ADD("custom", GAMEBOY, 0)
+	MCFG_SOUND_ADD("custom", GAMEBOY, 4194304)
 	MCFG_SOUND_ROUTE(0, "lspeaker", 0.50)
 	MCFG_SOUND_ROUTE(1, "rspeaker", 0.50)
 
@@ -811,6 +811,8 @@ static MACHINE_CONFIG_DERIVED( supergb, gameboy )
 
 	MCFG_DEVICE_REMOVE("lcd")
 	MCFG_GB_LCD_SGB_ADD("lcd")
+
+	MCFG_SOUND_REPLACE("custom", GAMEBOY, 4295454)
 MACHINE_CONFIG_END
 
 static MACHINE_CONFIG_DERIVED( gbpocket, gameboy )
@@ -854,7 +856,7 @@ static MACHINE_CONFIG_START( gbcolor, gb_state )
 
 	/* sound hardware */
 	MCFG_SPEAKER_STANDARD_STEREO("lspeaker", "rspeaker")
-	MCFG_SOUND_ADD("custom", GAMEBOY, 0)
+	MCFG_SOUND_ADD("custom", GAMEBOY, 4194304)
 	MCFG_SOUND_ROUTE(0, "lspeaker", 0.50)
 	MCFG_SOUND_ROUTE(1, "rspeaker", 0.50)
 
@@ -900,7 +902,7 @@ static MACHINE_CONFIG_START( megaduck, megaduck_state )
 
 	/* sound hardware */
 	MCFG_SPEAKER_STANDARD_STEREO("lspeaker", "rspeaker")
-	MCFG_SOUND_ADD("custom", GAMEBOY, 0)
+	MCFG_SOUND_ADD("custom", GAMEBOY, 4194304)
 	MCFG_SOUND_ROUTE(0, "lspeaker", 0.50)
 	MCFG_SOUND_ROUTE(1, "rspeaker", 0.50)
 

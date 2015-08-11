@@ -46,6 +46,8 @@ private:
 	UINT32  m_env_offset[SETA_NUM_CHANNELS];
 
 	UINT32 m_base_clock;
+
+	UINT16  m_vgm_idx;
 };
 
 extern const device_type X1_010;

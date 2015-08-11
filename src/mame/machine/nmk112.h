@@ -45,6 +45,7 @@ private:
 	const char *m_tag0, *m_tag1;
 	UINT8 *m_rom0, *m_rom1;
 	int   m_size0, m_size1;
+	UINT16 m_vgm_idx0, m_vgm_idx1;
 };
 
 extern const device_type NMK112;
