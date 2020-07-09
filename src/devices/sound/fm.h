@@ -131,6 +131,8 @@ int ym2203_timer_over(void *chip, int c);
 **  State Save
 */
 void ym2203_postload(void *chip);
+
+VGMDeviceLog* ym2203_get_vgmlog_dev(void *chip);
 #endif /* BUILD_YM2203 */
 
 #if BUILD_YM2608
@@ -148,6 +150,7 @@ int ym2608_write(void *chip, int a,unsigned char v);
 unsigned char ym2608_read(void *chip,int a);
 int ym2608_timer_over(void *chip, int c );
 void ym2608_postload(void *chip);
+VGMDeviceLog* ym2608_get_vgmlog_dev(void *chip);
 #endif /* BUILD_YM2608 */
 
 #if (BUILD_YM2610||BUILD_YM2610B)
@@ -168,6 +171,7 @@ int ym2610_write(void *chip, int a,unsigned char v);
 unsigned char ym2610_read(void *chip,int a);
 int ym2610_timer_over(void *chip, int c );
 void ym2610_postload(void *chip);
+VGMDeviceLog* ym2610_get_vgmlog_dev(void *chip);
 #endif /* (BUILD_YM2610||BUILD_YM2610B) */
 
 #if (BUILD_YM2612||BUILD_YM3438)

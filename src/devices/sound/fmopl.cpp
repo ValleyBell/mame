@@ -70,6 +70,7 @@ Revision History:
 */
 
 #include "emu.h"
+#include "vgmwrite.hpp"
 #include "fmopl.h"
 #include "ymdeltat.h"
 
@@ -406,6 +407,7 @@ public:
 	uint32_t rate;                    /* sampling rate (Hz)           */
 	double freqbase;                /* frequency base               */
 	attotime TimerBase;         /* Timer base time (==sampling time)*/
+	VGMDeviceLog* m_vgm_log;
 	device_t *device;
 
 	signed int phase_modulation;    /* phase modulation input (SLOT 2) */
@@ -955,6 +957,7 @@ public:
 		else
 		{   /* data port */
 			if (UpdateHandler) UpdateHandler(UpdateParam, 0);
+			m_vgm_log->Write(0x00, address, v);
 			WriteReg(address, v);
 		}
 		return status>>7;
@@ -2150,6 +2153,7 @@ void * ym3812_init(device_t *device, uint32_t clock, uint32_t rate)
 	{
 		OPL_save_state(YM3812, device);
 		ym3812_reset_chip(YM3812);
+		YM3812->m_vgm_log = device->machine().vgm_logger().OpenDevice(VGMC_YM3812, clock);
 	}
 	return YM3812;
 }
@@ -2280,6 +2284,7 @@ void *ym3526_init(device_t *device, uint32_t clock, uint32_t rate)
 	{
 		OPL_save_state(YM3526, device);
 		ym3526_reset_chip(YM3526);
+		YM3526->m_vgm_log = device->machine().vgm_logger().OpenDevice(VGMC_YM3526, clock);
 	}
 	return YM3526;
 }
@@ -2430,6 +2435,7 @@ void *y8950_init(device_t *device, uint32_t clock, uint32_t rate)
 		/* reset */
 		OPL_save_state(Y8950, device);
 		y8950_reset_chip(Y8950);
+		Y8950->m_vgm_log = device->machine().vgm_logger().OpenDevice(VGMC_Y8950, clock);
 	}
 
 	return Y8950;
@@ -2482,6 +2488,7 @@ void y8950_set_delta_t_memory(void *chip, FM_READBYTE read_byte, FM_WRITEBYTE wr
 	FM_OPL      *OPL = (FM_OPL *)chip;
 	OPL->deltat->read_byte = read_byte;
 	OPL->deltat->write_byte = write_byte;
+	//OPL->m_vgm_log->WriteLargeData(0x01, OPL->deltat->memory_size, 0x00, 0x00, OPL->deltat->memory);
 }
 
 /*
@@ -2567,6 +2574,13 @@ void y8950_set_keyboard_handler(void *chip,OPL_PORTHANDLER_W KeyboardHandler_w,O
 	OPL->keyboardhandler_w = KeyboardHandler_w;
 	OPL->keyboardhandler_r = KeyboardHandler_r;
 	OPL->keyboard_param = device;
+}
+
+VGMDeviceLog* y8950_get_vgmlog_dev(void *chip)
+{
+	FM_OPL      *OPL = (FM_OPL *)chip;
+
+	return OPL->m_vgm_log;
 }
 
 #endif

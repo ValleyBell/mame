@@ -135,6 +135,7 @@
 /************************************************************************/
 
 #include "emu.h"
+#include "vgmwrite.hpp"
 #include "fm.h"
 
 #if (BUILD_YM2612||BUILD_YM3438)
@@ -697,6 +698,8 @@ struct ym2612_state
 	/* dac output (YM2612) */
 	int         dacen;
 	int32_t       dacout;
+
+	VGMDeviceLog* m_vgm_log;
 	device_t    *device;
 };
 
@@ -2396,6 +2399,9 @@ void * ym2612_init(device_t *device, int clock, int rate,
 #ifdef MAME_EMU_SAVE_H
 	YM2612_save_state(F2612, device);
 #endif
+
+	F2612->m_vgm_log = device->machine().vgm_logger().OpenDevice(VGMC_YM2612, F2612->OPN.ST.clock);
+
 	return F2612;
 }
 
@@ -2486,6 +2492,7 @@ int ym2612_write(void *chip, int a, uint8_t v)
 			break;  /* verified on real YM2608 */
 
 		addr = F2612->OPN.ST.address;
+		F2612->m_vgm_log->Write(0x00, addr, v);
 		F2612->REGS[addr] = v;
 		switch( addr & 0xf0 )
 		{
@@ -2527,6 +2534,7 @@ int ym2612_write(void *chip, int a, uint8_t v)
 			break;  /* verified on real YM2608 */
 
 		addr = F2612->OPN.ST.address;
+		F2612->m_vgm_log->Write(0x01, addr, v);
 		F2612->REGS[addr | 0x100] = v;
 		ym2612_device::update_request(F2612->OPN.ST.device);
 		OPNWriteReg(&(F2612->OPN),addr | 0x100,v);

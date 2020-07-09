@@ -25,6 +25,8 @@ public:
 	u8 read(offs_t offset);
 	void write(offs_t offset, u8 data);
 
+	VGMDeviceLog* get_vgmlog_dev() const;	// for SampleROM init and NeoGeo CD
+
 	// update request from fm.cpp
 	static void update_request(device_t *param) { downcast<ym2610_device *>(param)->update_request(); }
 

@@ -106,6 +106,8 @@ void y8950_set_timer_handler(void *chip, OPL_TIMERHANDLER TimerHandler, device_t
 void y8950_set_irq_handler(void *chip, OPL_IRQHANDLER IRQHandler, device_t *device);
 void y8950_set_update_handler(void *chip, OPL_UPDATEHANDLER UpdateHandler, device_t *device);
 
+VGMDeviceLog* y8950_get_vgmlog_dev(void *chip);
+
 #endif /* BUILD_Y8950 */
 
 

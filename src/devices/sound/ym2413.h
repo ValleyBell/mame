@@ -166,6 +166,8 @@ private:
 	// internal state
 	sound_stream *  m_stream;
 
+	VGMDeviceLog* m_vgm_log;
+
 	int limit( int val, int max, int min );
 	void advance_lfo();
 	void advance();

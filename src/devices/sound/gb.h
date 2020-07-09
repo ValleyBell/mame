@@ -142,6 +142,7 @@ protected:
 	uint8_t m_snd_regs[0x30];
 	attotime m_last_updated;
 	emu_timer *m_timer;
+	VGMDeviceLog* m_vgm_log;
 
 	virtual void apu_power_off() = 0;
 	void sound_w_internal(int offset, uint8_t data);

@@ -56,6 +56,7 @@ differences between OPL2 and OPL3 shown in datasheets:
 */
 
 #include "emu.h"
+#include "vgmwrite.hpp"
 #include "ymf262.h"
 
 
@@ -262,6 +263,7 @@ struct OPL3
 	uint8_t   st[2];                  /* timer enable                 */
 
 	uint32_t  address;                /* address register             */
+	uint32_t  addressa;               /* address register             */
 	uint8_t   status;                 /* status flag                  */
 	uint8_t   statusmask;             /* status mask                  */
 
@@ -282,6 +284,7 @@ struct OPL3
 	double freqbase;                /* frequency base               */
 	attotime TimerBase;         /* Timer base time (==sampling time)*/
 	device_t *device;
+	VGMDeviceLog* m_vgm_log;
 
 	/* Optional handlers */
 	void SetTimerHandler(OPL3_TIMERHANDLER handler, device_t *device)
@@ -2362,6 +2365,7 @@ static void OPL3ResetChip(OPL3 *chip)
 static OPL3 *OPL3Create(device_t *device, int clock, int rate, int type, int divider)
 {
 	OPL3 *chip;
+	VGMDeviceLog* opl4VgmDev;
 
 	if (OPL3_LockTable(device) == -1) return nullptr;
 
@@ -2375,6 +2379,12 @@ static OPL3 *OPL3Create(device_t *device, int clock, int rate, int type, int div
 
 	/* reset chip */
 	OPL3ResetChip(chip);
+
+	opl4VgmDev = device->machine().vgm_logger().GetChip(VGMC_YMF278B, 0);
+	if (opl4VgmDev == nullptr)
+		chip->m_vgm_log = device->machine().vgm_logger().OpenDevice(VGMC_YMF262, chip->clock);
+	else
+		chip->m_vgm_log = nullptr;	// prevent OPL3+OPL4 (fixes workaround for "Fuuki 32 Bit Games")
 	return chip;
 }
 
@@ -2397,11 +2407,13 @@ static int OPL3Write(OPL3 *chip, int a, int v)
 	{
 	case 0: /* address port 0 (register set #1) */
 		chip->address = v;
+		chip->addressa = v;
 	break;
 
 	case 1: /* data port - ignore A1 */
 	case 3: /* data port - ignore A1 */
 		if(chip->UpdateHandler) chip->UpdateHandler(chip->UpdateParam,0);
+		chip->m_vgm_log->Write(chip->addressa >> 8, chip->addressa & 0xFF, v);
 		OPL3WriteReg(chip,chip->address,v);
 	break;
 
@@ -2429,6 +2441,7 @@ static int OPL3Write(OPL3 *chip, int a, int v)
 			else
 				chip->address = v;  /* verified range: 0x01, 0x04, 0x20-0xef(set #2 becomes set #1 in opl2 mode) */
 		}
+		chip->addressa = v | 0x100;
 	break;
 	}
 

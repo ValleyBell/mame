@@ -19,6 +19,7 @@
 *
 ******************************************************************************/
 #include "emu.h"
+#include "vgmwrite.hpp"
 #include "8950intf.h"
 #include "fmopl.h"
 
@@ -86,6 +87,7 @@ void y8950_device::device_start()
 
 	/* ADPCM ROM data */
 	y8950_set_delta_t_memory(m_chip, &y8950_device::static_read_byte, &y8950_device::static_write_byte);
+	y8950_get_vgmlog_dev(m_chip)->DumpSampleROM(0x01, space());
 
 	m_stream = machine().sound().stream_alloc(*this,0,1,rate);
 	/* port and keyboard handler */

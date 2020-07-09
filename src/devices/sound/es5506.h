@@ -138,6 +138,8 @@ protected:
 	std::unique_ptr<s16[]>    m_ulaw_lookup;
 	std::unique_ptr<u32[]>    m_volume_lookup;
 
+	VGMDeviceLog* m_vgm_log;
+
 #if ES5506_MAKE_WAVS
 	void *      m_wavraw;                 /* raw waveform */
 #endif

@@ -53,6 +53,7 @@ private:
 	// MAME resources
 	required_device<dsp16_device_base> m_dsp;
 	sound_stream *m_stream;
+	VGMDeviceLog* m_vgm_log;
 
 	// DSP communication
 	u16 m_rom_bank, m_rom_offset;

@@ -128,6 +128,8 @@ private:
 	int m_clock;
 	int m_rate;
 
+	VGMDeviceLog* m_vgm_log;
+
 	sound_stream * m_stream;
 	std::vector<int32_t> m_mix_buffer;
 	devcb_write_line m_irq_handler;

@@ -68,6 +68,7 @@
 ***************************************************************************/
 
 #include "emu.h"
+#include "vgmwrite.hpp"
 #include "saa1099.h"
 
 #define LEFT    0x00
@@ -165,6 +166,8 @@ void saa1099_device::device_start()
 
 	/* for each chip allocate one stream */
 	m_stream = stream_alloc(0, 2, m_sample_rate);
+
+	m_vgm_log = machine().vgm_logger().OpenDevice(VGMC_SAA1099, clock());
 
 	save_item(NAME(m_noise_params));
 	save_item(NAME(m_env_enable));
@@ -377,6 +380,8 @@ void saa1099_device::data_w(u8 data)
 
 	/* first update the stream to this point in time */
 	m_stream->update();
+
+	m_vgm_log->Write(0x00, reg & 0x7F, data);
 
 	switch (reg)
 	{

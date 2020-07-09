@@ -33,6 +33,7 @@
 */
 
 #include "emu.h"
+#include "vgmwrite.hpp"
 #include "es5503.h"
 
 // device type definition
@@ -226,6 +227,10 @@ void es5503_device::device_start()
 	output_rate = (clock() / 8) / (2 + oscsenabled);
 	m_stream = machine().sound().stream_alloc(*this, 0, output_channels, output_rate);
 
+	m_vgm_log = machine().vgm_logger().OpenDevice(VGMC_ES5503, clock());
+	m_vgm_log->SetProperty(0x01, output_channels);
+	m_vgm_log->DumpSampleROM(0x01, memregion(DEVICE_SELF));
+
 	m_timer = timer_alloc(0, nullptr);
 	attotime update_rate = output_rate ? attotime::from_hz(output_rate) : attotime::never;
 	m_timer->adjust(update_rate, 0, update_rate);
@@ -359,6 +364,8 @@ u8 es5503_device::read(offs_t offset)
 void es5503_device::write(offs_t offset, u8 data)
 {
 	m_stream->update();
+
+	m_vgm_log->Write(0x00, offset, data);
 
 	if (offset < 0xe0)
 	{

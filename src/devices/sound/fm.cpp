@@ -113,6 +113,7 @@
 
 #include "emu.h"
 
+#include "vgmwrite.hpp"
 #define YM2610B_WARNING
 #include "fm.h"
 
@@ -2107,6 +2108,7 @@ struct ym2203_state
 	uint8_t REGS[256];        /* registers         */
 	FM_OPN OPN;             /* OPN state         */
 	FM_CH CH[3];            /* channel state     */
+	VGMDeviceLog* m_vgm_log;
 };
 } // anonymous namespace
 
@@ -2298,6 +2300,10 @@ void * ym2203_init(device_t *device, int clock, int rate, FM_TIMERHANDLER timer_
 #ifdef MAME_EMU_SAVE_H
 	YM2203_save_state(F2203, device);
 #endif
+
+	F2203->m_vgm_log = device->machine().vgm_logger().OpenDevice(VGMC_YM2203, F2203->OPN.ST.clock);
+	//F2203->m_vgm_log->SetProperty(0x01, psg_flags);
+
 	return F2203;
 }
 
@@ -2333,11 +2339,15 @@ int ym2203_write(void *chip,int a,uint8_t v)
 
 		/* prescaler select : 2d,2e,2f  */
 		if( v >= 0x2d && v <= 0x2f )
+		{
+			F2203->m_vgm_log->Write(0x00, v, 1);
 			OPNPrescaler_w(OPN , v , 1);
+		}
 	}
 	else
 	{   /* data port */
 		int addr = OPN->ST.address;
+		F2203->m_vgm_log->Write(0x00, addr, v);
 		F2203->REGS[addr] = v;
 		switch( addr & 0xf0 )
 		{
@@ -2398,6 +2408,13 @@ int ym2203_timer_over(void *chip,int c)
 	}
 	return F2203->OPN.ST.irq;
 }
+
+VGMDeviceLog* ym2203_get_vgmlog_dev(void *chip)
+{
+	ym2203_state *F2203 = (ym2203_state *)chip;
+
+	return F2203->m_vgm_log;
+}
 #endif /* BUILD_YM2203 */
 
 
@@ -2451,6 +2468,7 @@ struct ym2610_state
 	uint8_t       flagmask;           /* YM2608 only */
 	uint8_t       irqmask;            /* YM2608 only */
 
+	VGMDeviceLog* m_vgm_log;
 	device_t    *device;
 
 	/* different from the usual ADPCM table */
@@ -2990,6 +3008,11 @@ void * ym2608_init(device_t *device, int clock, int rate,
 #ifdef MAME_EMU_SAVE_H
 	YM2608_save_state(F2608, device);
 #endif
+
+	F2608->m_vgm_log = device->machine().vgm_logger().OpenDevice(VGMC_YM2608, F2608->OPN.ST.clock);
+	//F2608->m_vgm_log->SetProperty(0x01, psg_flags);
+	//F2608->m_vgm_log->WriteLargeData(0x01, F2608->deltaT.memory_size, 0x00, 0x00, F2608->deltaT.memory);
+
 	return F2608;
 }
 
@@ -3113,6 +3136,7 @@ int ym2608_write(void *chip, int a,uint8_t v)
 		/* prescaler selecter : 2d,2e,2f  */
 		if( v >= 0x2d && v <= 0x2f )
 		{
+			F2608->m_vgm_log->Write(0x00, v, 2);
 			OPNPrescaler_w(OPN , v , 2);
 			F2608->deltaT.freqbase = OPN->ST.freqbase;
 		}
@@ -3123,6 +3147,7 @@ int ym2608_write(void *chip, int a,uint8_t v)
 			break;  /* verified on real YM2608 */
 
 		addr = OPN->ST.address;
+		F2608->m_vgm_log->Write(0x00, addr, v);
 		F2608->REGS[addr] = v;
 		switch(addr & 0xf0)
 		{
@@ -3161,6 +3186,7 @@ int ym2608_write(void *chip, int a,uint8_t v)
 			break;  /* verified on real YM2608 */
 
 		addr = OPN->ST.address;
+		F2608->m_vgm_log->Write(0x01, addr, v);
 		F2608->REGS[addr | 0x100] = v;
 		ym2608_device::update_request(OPN->ST.device);
 		switch( addr & 0xf0 )
@@ -3267,6 +3293,12 @@ int ym2608_timer_over(void *chip,int c)
 	return F2608->OPN.ST.irq;
 }
 
+VGMDeviceLog* ym2608_get_vgmlog_dev(void *chip)
+{
+	ym2608_state *F2608 = (ym2608_state *)chip;
+
+	return F2608->m_vgm_log;
+}
 #endif /* BUILD_YM2608 */
 
 
@@ -3633,6 +3665,7 @@ void *ym2610_init(device_t *device, int clock, int rate,
 	FM_TIMERHANDLER timer_handler,FM_IRQHANDLER IRQHandler, const ssg_callbacks *ssg)
 {
 	ym2610_state *F2610;
+	uint8_t mode_b;
 
 	/* allocate extend state space */
 	F2610 = auto_alloc_clear(device->machine(), <ym2610_state>());
@@ -3669,6 +3702,13 @@ void *ym2610_init(device_t *device, int clock, int rate,
 #ifdef MAME_EMU_SAVE_H
 	YM2610_save_state(F2610, device);
 #endif
+
+	F2610->m_vgm_log = device->machine().vgm_logger().OpenDevice(VGMC_YM2610, F2610->OPN.ST.clock);
+	mode_b = (device->type() == YM2610B);
+	F2610->m_vgm_log->SetProperty(0x00, mode_b);	// set YM2610B mode
+	//F2610->m_vgm_log->WriteLargeData(0x01, F2610->pcm_size, 0x00, 0x00, F2610->pcmbuf);
+	//F2610->m_vgm_log->WriteLargeData(0x02, F2610->deltaT.memory_size, 0x00, 0x00, F2610->deltaT.memory);
+
 	return F2610;
 }
 
@@ -3784,6 +3824,7 @@ int ym2610_write(void *chip, int a, uint8_t v)
 			break;  /* verified on real YM2608 */
 
 		addr = OPN->ST.address;
+		F2610->m_vgm_log->Write(0x00, addr, v);
 		F2610->REGS[addr] = v;
 		switch(addr & 0xf0)
 		{
@@ -3853,6 +3894,7 @@ int ym2610_write(void *chip, int a, uint8_t v)
 
 		ym2610_device::update_request(OPN->ST.device);
 		addr = OPN->ST.address;
+		F2610->m_vgm_log->Write(0x01, addr, v);
 		F2610->REGS[addr | 0x100] = v;
 		if( addr < 0x30 )
 			/* 100-12f : ADPCM A section */
@@ -3914,4 +3956,10 @@ int ym2610_timer_over(void *chip,int c)
 	return F2610->OPN.ST.irq;
 }
 
+VGMDeviceLog* ym2610_get_vgmlog_dev(void *chip)
+{
+	ym2610_state *F2610 = (ym2610_state *)chip;
+
+	return F2610->m_vgm_log;
+}
 #endif /* (BUILD_YM2610||BUILD_YM2610B) */

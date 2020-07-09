@@ -59,6 +59,7 @@
  *****************************************************************************/
 
 #include "emu.h"
+#include "vgmwrite.hpp"
 #include "pokey.h"
 
 #include "debugger.h"
@@ -257,6 +258,8 @@ void pokey_device::device_start()
 	m_serout_w_cb.resolve_safe();
 
 	m_stream = stream_alloc(0, 1, clock());
+
+	m_vgm_log = machine().vgm_logger().OpenDevice(VGMC_POKEY, clock());
 
 	timer_alloc(SYNC_WRITE);    /* timer for sync operation */
 	timer_alloc(SYNC_NOOP);
@@ -868,6 +871,7 @@ uint8_t pokey_device::read(offs_t offset)
 
 void pokey_device::write(offs_t offset, uint8_t data)
 {
+	m_vgm_log->Write(0x00, offset, data);
 	synchronize(SYNC_WRITE, (offset << 8) | data);
 }
 

@@ -27,6 +27,8 @@ public:
 	void control_port_w(u8 data);
 	void write_port_w(u8 data);
 
+	VGMDeviceLog* get_vgmlog_dev() const;
+
 	// update request from fm.cpp
 	static void update_request(device_t *param) { downcast<ym2203_device *>(param)->update_request(); }
 

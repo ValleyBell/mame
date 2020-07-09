@@ -70,6 +70,7 @@ private:
 
 	memory_access<16, 0, 0, ENDIANNESS_LITTLE>::cache m_cache;
 	sound_stream*                                     m_stream;
+	VGMDeviceLog*                                     m_vgm_log;
 	pcm_channel                                       m_chan[NUM_CHANNELS];
 	u8                                                m_cbank;
 	u16                                               m_wbank;

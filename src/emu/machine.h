@@ -248,6 +248,7 @@ public:
 
 	// misc
 	address_space &dummy_space() const { return m_dummy_space.space(AS_PROGRAM); }
+	VGMLogger &vgm_logger() const { return *m_vgm_logger; }
 	void popmessage() const { popmessage(static_cast<char const *>(nullptr)); }
 	template <typename Format, typename... Params> void popmessage(Format &&fmt, Params &&... args) const;
 	template <typename Format, typename... Params> void logerror(Format &&fmt, Params &&... args) const;
@@ -400,6 +401,9 @@ private:
 
 	// configuration state
 	dummy_space_device m_dummy_space;
+
+	// VGM logger
+	std::unique_ptr<VGMLogger> m_vgm_logger;
 
 #if defined(__EMSCRIPTEN__)
 private:

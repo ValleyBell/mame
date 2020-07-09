@@ -40,6 +40,7 @@ to do:
 */
 
 #include "emu.h"
+#include "vgmwrite.hpp"
 #include "ym2413.h"
 
 #include <algorithm>
@@ -1513,6 +1514,8 @@ void ym2413_device::device_start()
 
 	m_stream = machine().sound().stream_alloc(*this,0,2,rate);
 
+	m_vgm_log = machine().vgm_logger().OpenDevice(VGMC_YM2413, clock());
+
 	for (int x=0; x<TL_RES_LEN; x++)
 	{
 		double m = (1<<16) / pow(2, (x+1) * (ENV_STEP/4.0) / 8.0);
@@ -1722,6 +1725,7 @@ void ym2413_device::register_port_w(u8 data)
 void ym2413_device::data_port_w(u8 data)
 {
 	m_stream->update();
+	m_vgm_log->Write(0x00, address, data);
 	write_reg(address, data);
 }
 

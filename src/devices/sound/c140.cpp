@@ -47,6 +47,7 @@ TODO:
 
 
 #include "emu.h"
+#include "vgmwrite.hpp"
 #include "c140.h"
 #include <algorithm>
 
@@ -151,6 +152,22 @@ void c140_device::device_start()
 	/* allocate a pair of buffers to mix into - 1 second's worth should be more than enough */
 	m_mixer_buffer_left = std::make_unique<s16[]>(m_sample_rate);
 	m_mixer_buffer_right = std::make_unique<s16[]>(m_sample_rate);
+
+	m_vgm_log = machine().vgm_logger().OpenDevice(VGMC_C140, clock());
+	if (type() == C219)
+		m_vgm_log->SetProperty(0x01, 0x02);
+	else //if (m_banking_type == C140_TYPE::SYSTEM2)
+		m_vgm_log->SetProperty(0x01, 0x00);
+	//else if (m_banking_type == C140_TYPE::SYSTEM21)
+	//	m_vgm_log->SetProperty(0x01, 0x01);
+	if (true)	// TODO: Are we still able to detect if this is ROM or RAM?
+	{
+		m_vgm_log->DumpSampleROM(0x01, memregion(DEVICE_SELF));
+	}
+	else
+	{
+		logerror("VGM Warning: C140 wants to use dynamic memory (i.e. RAM)!\n");
+	}
 
 	save_item(NAME(m_REG));
 
@@ -560,6 +577,8 @@ void c219_device::c219_w(offs_t offset, u8 data)
 	m_stream->update();
 
 	offset &= 0x1ff;
+
+	m_vgm_log->Write(0x00, offset, data);
 
 	// mirror the bank registers on the 219, fixes bkrtmaq (and probably xday2 based on notes in the HLE)
 	if ((offset >= 0x1f8) && BIT(offset, 0))

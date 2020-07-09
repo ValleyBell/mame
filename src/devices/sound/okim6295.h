@@ -46,7 +46,10 @@ public:
 	void config_pin7(pin7_state pin7) { assert(!started()); m_pin7_state = pin7; }
 
 	// runtime configuration
+	void set_rom_bank(int bank);
 	void set_pin7(int pin7);
+
+	VGMDeviceLog* get_vgmlog_dev() const { return m_vgm_log; }	// for NMK112
 
 	uint8_t read();
 	void write(uint8_t command);
@@ -92,6 +95,8 @@ protected:
 	uint8_t               m_pin7_state;
 
 	static const uint8_t s_volume_table[16];
+
+	VGMDeviceLog* m_vgm_log;
 };
 
 

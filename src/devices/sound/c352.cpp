@@ -17,6 +17,7 @@
  */
 
 #include "emu.h"
+#include "vgmwrite.hpp"
 #include "c352.h"
 #include "wavwrite.h"
 
@@ -222,6 +223,8 @@ void c352_device::write(offs_t offset, u16 data, u16 mem_mask)
 		offsetof(c352_voice_t, wave_loop) / sizeof(u16),
 	};
 
+	m_vgm_log->Write((offset >> 8) & 0xFF, data, (offset >> 0) & 0xFF);
+
 	if (offset < 0x100)
 	{
 		u16 newval = read(offset);
@@ -385,6 +388,14 @@ void c352_device::device_start()
 	}
 	for (int i = 0; i < 128; i++)
 		m_mulawtab[i + 128] = (~m_mulawtab[i]) & 0xffe0;
+
+	m_vgm_log = machine().vgm_logger().OpenDevice(VGMC_C352, clock());
+	m_vgm_log->SetProperty(0x01, m_divider);
+	// Note: sample ROM is always 16 MB
+	if (memregion(DEVICE_SELF) != nullptr)
+		m_vgm_log->DumpSampleROM(0x01, memregion(DEVICE_SELF));
+	else
+		m_vgm_log->DumpSampleROM(0x01, space());
 
 	// register save state info
 	save_item(STRUCT_MEMBER(m_c352_v, pos));

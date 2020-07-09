@@ -53,6 +53,7 @@ TODO:
 ***************************************************************************************/
 
 #include "emu.h"
+#include "vgmwrite.hpp"
 #include "gb.h"
 
 
@@ -145,6 +146,8 @@ void gameboy_sound_device::device_start()
 	m_channel = machine().sound().stream_alloc(*this, 0, 2, machine().sample_rate());
 	m_timer = machine().scheduler().timer_alloc(timer_expired_delegate(FUNC(gameboy_sound_device::timer_callback),this));
 	m_timer->adjust(clocks_to_attotime(FRAME_CYCLES/128), 0, clocks_to_attotime(FRAME_CYCLES/128));
+
+	m_vgm_log = machine().vgm_logger().OpenDevice(VGMC_GBSOUND, clock());
 
 	save_item(NAME(m_last_updated));
 	save_item(NAME(m_snd_regs));
@@ -697,6 +700,7 @@ void dmg_apu_device::wave_w(offs_t offset, u8 data)
 	m_channel->update();
 	update_state();
 
+	m_vgm_log->Write(0x00, AUD3W0 + offset, data);
 	if (m_snd_3.on)
 	{
 		if (m_snd_3.sample_reading)
@@ -716,6 +720,7 @@ void cgb04_apu_device::wave_w(offs_t offset, u8 data)
 	m_channel->update();
 	update_state();
 
+	m_vgm_log->Write(0x00, AUD3W0 + offset, data);
 	if (m_snd_3.on)
 	{
 		m_snd_regs[AUD3W0 + (m_snd_3.offset/2)] = data;
@@ -733,6 +738,7 @@ void dmg_apu_device::sound_w(offs_t offset, u8 data)
 	m_channel->update();
 	update_state();
 
+	m_vgm_log->Write(0x00, offset, data);
 	/* Only register NR52 is accessible if the sound controller is disabled */
 	if (!m_snd_control.on && offset != NR52 && offset != NR11 && offset != NR21 && offset != NR31 && offset != NR41)
 		return;
@@ -747,6 +753,7 @@ void cgb04_apu_device::sound_w(offs_t offset, u8 data)
 	m_channel->update();
 	update_state();
 
+	m_vgm_log->Write(0x00, offset, data);
 	/* Only register NR52 is accessible if the sound controller is disabled */
 	if (!m_snd_control.on && offset != NR52)
 		return;

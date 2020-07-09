@@ -14,6 +14,7 @@
 ***************************************************************************/
 
 #include "emu.h"
+#include "vgmwrite.hpp"
 #include "2608intf.h"
 #include "fm.h"
 
@@ -102,6 +103,8 @@ void ym2608_device::device_start()
 			&ym2608_device::static_timer_handler,&ym2608_device::static_irq_handler,&psgintf);
 	if (!m_chip)
 		throw emu_fatalerror("ym2608_device(%s): Error creating YM2608 chip", tag());
+	get_vgmlog_dev()->SetProperty(0x01, ay8910_device::m_flags);
+	get_vgmlog_dev()->DumpSampleROM(0x01, space());
 }
 
 //-------------------------------------------------
@@ -150,6 +153,11 @@ u8 ym2608_device::read(offs_t offset)
 void ym2608_device::write(offs_t offset, u8 data)
 {
 	ym2608_write(m_chip, offset & 3, data);
+}
+
+VGMDeviceLog* ym2608_device::get_vgmlog_dev() const
+{
+	return ym2608_get_vgmlog_dev(m_chip);
 }
 
 DEFINE_DEVICE_TYPE(YM2608, ym2608_device, "ym2608", "YM2608 OPNA")

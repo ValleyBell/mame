@@ -22,6 +22,7 @@
 */
 
 #include "emu.h"
+#include "vgmwrite.hpp"
 #include "ymf271.h"
 
 #include <algorithm>
@@ -1462,6 +1463,8 @@ void ymf271_device::write(offs_t offset, u8 data)
 	m_stream->update();
 
 	m_regs_main[offset & 0xf] = data;
+	if (offset & 0x01)
+		m_vgm_log->Write(offset >> 1, m_regs_main[offset & 0x0E], data);
 
 	switch (offset & 0xf)
 	{
@@ -1749,6 +1752,9 @@ void ymf271_device::device_start()
 
 	m_mix_buffer.resize(m_master_clock/(384/4));
 	m_stream = machine().sound().stream_alloc(*this, 0, 4, m_master_clock/384);
+
+	m_vgm_log = machine().vgm_logger().OpenDevice(VGMC_YMF271, m_master_clock);
+	m_vgm_log->DumpSampleROM(0x01, memregion(DEVICE_SELF));
 }
 
 //-------------------------------------------------

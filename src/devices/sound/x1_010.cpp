@@ -53,6 +53,7 @@ Registers:
 ***************************************************************************/
 
 #include "emu.h"
+#include "vgmwrite.hpp"
 #include "x1_010.h"
 
 
@@ -124,6 +125,9 @@ void x1_010_device::device_start()
 	m_reg = make_unique_clear<u8[]>(0x2000);
 	m_HI_WORD_BUF = make_unique_clear<u8[]>(0x2000);
 
+	m_vgm_log = machine().vgm_logger().OpenDevice(VGMC_X1_010, m_base_clock);
+	m_vgm_log->DumpSampleROM(0x01, memregion(DEVICE_SELF));
+
 	save_item(NAME(m_rate));
 	save_item(NAME(m_sound_enable));
 	save_pointer(NAME(m_reg), 0x2000);
@@ -172,6 +176,8 @@ void x1_010_device::write(offs_t offset, u8 data)
 {
 	int channel = offset/sizeof(X1_010_CHANNEL);
 	int reg     = offset%sizeof(X1_010_CHANNEL);
+
+	m_vgm_log->Write(0x00, offset, data);
 
 	if (channel < NUM_CHANNELS && reg == 0
 		&& (m_reg[offset] & 1) == 0 && (data & 1) != 0)

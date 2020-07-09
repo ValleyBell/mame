@@ -10,6 +10,7 @@
 *********************************************************/
 
 #include "emu.h"
+#include "vgmwrite.hpp"
 #include "k054539.h"
 
 //#define VERBOSE 1
@@ -78,6 +79,7 @@ k054539_device::k054539_device(const machine_config &mconfig, const char *tag, d
 
 void k054539_device::init_flags(int _flags)
 {
+	m_vgm_log->SetProperty(0x01, _flags);
 	flags = _flags;
 }
 
@@ -323,6 +325,10 @@ void k054539_device::init_chip()
 
 	stream = stream_alloc(0, 2, clock() / 384);
 
+	m_vgm_log = machine().vgm_logger().OpenDevice(VGMC_K054539, clock());
+	m_vgm_log->SetProperty(0x01, flags);
+	m_vgm_log->DumpSampleROM(0x01, memregion(DEVICE_SELF));
+
 	save_item(NAME(voltab));
 	save_item(NAME(pantab));
 	save_item(NAME(gain));
@@ -341,6 +347,8 @@ void k054539_device::init_chip()
 
 void k054539_device::write(offs_t offset, u8 data)
 {
+	m_vgm_log->Write(0x00, offset, data);
+
 	if(0) {
 		int voice, reg;
 

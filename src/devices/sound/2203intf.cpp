@@ -1,6 +1,7 @@
 // license:BSD-3-Clause
 // copyright-holders:Ernesto Corvi
 #include "emu.h"
+#include "vgmwrite.hpp"
 #include "2203intf.h"
 #include "fm.h"
 
@@ -93,6 +94,7 @@ void ym2203_device::device_start()
 	m_chip = ym2203_init(this,clock(),rate,&ym2203_device::static_timer_handler,&ym2203_device::static_irq_handler,&psgintf);
 	if (!m_chip)
 		throw emu_fatalerror("ym2203_device(%s): Error creating YM2203 chip", tag());
+	get_vgmlog_dev()->SetProperty(0x01, ay8910_device::m_flags);
 }
 
 void ym2203_device::device_clock_changed()
@@ -159,6 +161,11 @@ void ym2203_device::control_port_w(u8 data)
 void ym2203_device::write_port_w(u8 data)
 {
 	write(1, data);
+}
+
+VGMDeviceLog* ym2203_device::get_vgmlog_dev() const
+{
+	return ym2203_get_vgmlog_dev(m_chip);
 }
 
 DEFINE_DEVICE_TYPE(YM2203, ym2203_device, "ym2203", "YM2203 OPN")

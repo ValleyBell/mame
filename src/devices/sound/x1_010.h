@@ -39,6 +39,7 @@ private:
 	/* Variables only used here */
 	int m_rate;                              // Output sampling rate (Hz)
 	sound_stream *  m_stream;                // Stream handle
+	VGMDeviceLog* m_vgm_log;
 	int m_sound_enable;                      // sound output enable/disable
 	std::unique_ptr<u8[]>   m_reg;                 // X1-010 Register & wave form area
 	std::unique_ptr<u8[]>   m_HI_WORD_BUF;         // X1-010 16bit access ram check avoidance work

@@ -24,6 +24,8 @@ public:
 	u8 read(offs_t offset);
 	void write(offs_t offset, u8 data);
 
+	VGMDeviceLog* get_vgmlog_dev() const;
+
 	// update request from fm.cpp
 	static void update_request(device_t *param) { downcast<ym2608_device *>(param)->update_request(); }
 

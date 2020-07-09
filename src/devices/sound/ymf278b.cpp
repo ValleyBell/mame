@@ -49,6 +49,7 @@
 */
 
 #include "emu.h"
+#include "vgmwrite.hpp"
 #include "ymf278b.h"
 #include "ymf262.h"
 
@@ -707,6 +708,7 @@ void ymf278b_device::write(offs_t offset, u8 data)
 
 		case 1:
 		case 3:
+			m_vgm_log->Write(m_lastport, m_port_AB, data);
 			timer_busy_start(0);
 			if (m_lastport) B_w(m_port_AB, data);
 			else A_w(m_port_AB, data);
@@ -720,6 +722,7 @@ void ymf278b_device::write(offs_t offset, u8 data)
 			break;
 
 		case 5:
+			m_vgm_log->Write(0x02, m_port_C, data);
 			// PCM regs are only accessible if NEW2 is set
 			if (~m_exp & 2)
 				break;
@@ -1011,6 +1014,12 @@ void ymf278b_device::device_start()
 
 	m_stream = machine().sound().stream_alloc(*this, 0, 6, m_rate);
 	m_mix_buffer.resize(m_rate*4,0);
+
+	m_vgm_log = machine().vgm_logger().OpenDevice(VGMC_YMF278B, m_clock);
+	if (memregion(DEVICE_SELF) != nullptr)
+		m_vgm_log->DumpSampleROM(0x01, memregion(DEVICE_SELF));
+	else
+		m_vgm_log->DumpSampleROM(0x01, space());
 
 	// rate tables
 	precompute_rate_tables();

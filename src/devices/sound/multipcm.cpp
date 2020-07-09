@@ -34,6 +34,7 @@
  */
 
 #include "emu.h"
+#include "vgmwrite.hpp"
 #include "multipcm.h"
 #include "wavwrite.h"
 
@@ -431,6 +432,7 @@ uint8_t multipcm_device::read()
 
 void multipcm_device::write(offs_t offset, uint8_t data)
 {
+	m_vgm_log->Write(0x00, offset, data);
 	switch(offset)
 	{
 		case 0:     //Data write
@@ -570,6 +572,12 @@ void multipcm_device::device_start()
 		const float exp_volume = powf(10.0f, db / 20.0f);
 		m_linear_to_exp_volume[i] = value_to_fixed(TL_SHIFT, exp_volume);
 	}
+
+	m_vgm_log = machine().vgm_logger().OpenDevice(VGMC_MULTIPCM, clock());
+	if (memregion(DEVICE_SELF) != nullptr)
+		m_vgm_log->DumpSampleROM(0x01, memregion(DEVICE_SELF));
+	else
+		m_vgm_log->DumpSampleROM(0x01, space());
 
 	save_item(NAME(m_cur_slot));
 	save_item(NAME(m_address));

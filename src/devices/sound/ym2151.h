@@ -250,6 +250,7 @@ private:
 
 	// internal state
 	sound_stream *         m_stream;
+	VGMDeviceLog*          m_vgm_log;
 	uint8_t                  m_lastreg;
 	devcb_write_line       m_irqhandler;
 	devcb_write8           m_portwritehandler;

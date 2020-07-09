@@ -87,6 +87,7 @@ private:
 	uint8_t   m_external_speaker;   /* external speaker */
 	uint16_t  m_noise_shift;        /* Noise counter shift register */
 	uint8_t   m_master_volume;      /* Master volume */
+	VGMDeviceLog* m_vgm_log;
 };
 
 DECLARE_DEVICE_TYPE(WSWAN_SND, wswan_sound_device)

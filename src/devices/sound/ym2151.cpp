@@ -2,6 +2,7 @@
 // copyright-holders:Jarek Burczynski,Ernesto Corvi
 
 #include "emu.h"
+#include "vgmwrite.hpp"
 #include "ym2151.h"
 #include <algorithm>
 
@@ -656,6 +657,8 @@ void ym2151_device::write_reg(int r, int v)
 	status |= 0x80;   /* set busy flag for 64 chip clock cycles */
 #endif
 
+	m_vgm_log->Write(0x00, r, v);
+
 	switch(r & 0xe0)
 	{
 	case 0x00:
@@ -955,6 +958,8 @@ void ym2151_device::device_start()
 	eg_timer_overflow = 3 * eg_timer_add;
 
 	irqlinestate = 0;
+
+	m_vgm_log = machine().vgm_logger().OpenDevice(VGMC_YM2151, clock());
 
 	/* save all 32 operators */
 	save_item(STRUCT_MEMBER(oper, phase));

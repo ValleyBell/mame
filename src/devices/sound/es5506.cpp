@@ -83,6 +83,7 @@ Ensoniq OTIS - ES5505                                            Ensoniq OTTO - 
 ***********************************************************************************************/
 
 #include "emu.h"
+#include "vgmwrite.hpp"
 #include "es5506.h"
 
 #if ES5506_MAKE_WAVS
@@ -248,6 +249,10 @@ void es5506_device::device_start()
 	/* create the stream */
 	m_stream = machine().sound().stream_alloc(*this, 0, 2 * channels, clock() / (16*32));
 
+	m_vgm_log = machine().vgm_logger().OpenDevice(VGMC_ES5506, clock());
+	m_vgm_log->SetProperty(0x00, 0x01);	// ES5506 mode
+	m_vgm_log->SetProperty(0x01, m_channels);
+
 	/* initialize the regions */
 	m_region_base[0] = m_region_base[1] = m_region_base[2] = m_region_base[3] = nullptr;
 	if (m_region0)
@@ -256,6 +261,7 @@ void es5506_device::device_start()
 		if (region0 != nullptr)
 		{
 			m_region_base[0] = (u16 *)region0->base();
+			m_vgm_log->DumpSampleROM(0x00, region0);
 		}
 	}
 	if (m_region1)
@@ -264,6 +270,7 @@ void es5506_device::device_start()
 		if (region1 != nullptr)
 		{
 			m_region_base[1] = (u16 *)region1->base();
+			m_vgm_log->DumpSampleROM(0x01, region1);
 		}
 	}
 	if (m_region2)
@@ -272,6 +279,7 @@ void es5506_device::device_start()
 		if (region2 != nullptr)
 		{
 			m_region_base[2] = (u16 *)region2->base();
+			m_vgm_log->DumpSampleROM(0x02, region2);
 		}
 	}
 	if (m_region3)
@@ -280,6 +288,7 @@ void es5506_device::device_start()
 		if (region3 != nullptr)
 		{
 			m_region_base[3] = (u16 *)region3->base();
+			m_vgm_log->DumpSampleROM(0x03, region3);
 		}
 	}
 
@@ -382,16 +391,22 @@ void es5505_device::device_start()
 	/* create the stream */
 	m_stream = machine().sound().stream_alloc(*this, 0, 2 * channels, clock() / (16*32));
 
+	m_vgm_log = machine().vgm_logger().OpenDevice(VGMC_ES5506, clock());
+	m_vgm_log->SetProperty(0x00, 0x00);	// ES5505 mode
+	m_vgm_log->SetProperty(0x01, m_channels);
+
 	/* initialize the regions */
 	if (m_region0)
 	{
 		memory_region* region = machine().root_device().memregion(m_region0);
 		m_region_base[0] = region ? reinterpret_cast<u16 *>(region->base()) : nullptr;
+		m_vgm_log->DumpSampleROM(0x00, region);
 	}
 	if (m_region1)
 	{
 		memory_region* region = machine().root_device().memregion(m_region1);
 		m_region_base[1] = region ? reinterpret_cast<u16 *>(region->base()) : nullptr;
+		m_vgm_log->DumpSampleROM(0x01, region);
 	}
 
 	/* compute the tables */
@@ -1426,9 +1441,22 @@ void es5506_device::write(offs_t offset, u8 data)
 {
 	es550x_voice *voice = &m_voice[m_current_page & 0x1f];
 	int shift = 8 * (offset & 3);
+	static int lastofs = -1;
 
 	/* accumulate the data */
 	m_write_latch = (m_write_latch & ~(0xff000000 >> shift)) | (data << (24 - shift));
+	if (offset & 1)
+	{
+		uint16_t logdata;
+		
+		if (lastofs != -1 && lastofs != offset-1)
+			logerror("ES5506: Last Offset %02X, New Offset %02X\n", lastofs, offset);
+		logdata = (offset & 2) ? (m_write_latch & 0xFFFF) : (m_write_latch >> 16);
+		m_vgm_log->Write(0x80, logdata, offset & ~1);
+	}
+	else if (lastofs != -1 && ! (lastofs & 1))
+		logerror("ES5506: Last Offset %02X, New Offset %02X\n", lastofs, offset);
+	lastofs = offset;
 
 	/* wait for a write to complete */
 	if (shift != 24)
@@ -1663,6 +1691,7 @@ u8 es5506_device::read(offs_t offset)
 
 void es5506_device::voice_bank_w(int voice, int bank)
 {
+	m_vgm_log->Write(0x00, 0x40 | voice, bank >> 20);
 	m_voice[voice].exbank=bank;
 }
 
@@ -1960,6 +1989,13 @@ void es5505_device::write(offs_t offset, u16 data, u16 mem_mask)
 
 //  logerror("%s:ES5505 write %02x/%02x = %04x & %04x\n", machine().describe_context(), m_current_page, offset, data, mem_mask);
 
+	if (ACCESSING_BITS_0_7 && ACCESSING_BITS_8_15)
+		m_vgm_log->Write(0x80, data, offset*2);
+	else if (ACCESSING_BITS_8_15)
+		m_vgm_log->Write(0x00, offset*2 + 0, (data & 0xFF00) >> 8);
+	else if (ACCESSING_BITS_0_7)
+		m_vgm_log->Write(0x00, offset*2 + 1, (data & 0x00FF) >> 0);
+
 	/* force an update */
 	m_stream->update();
 
@@ -2198,6 +2234,7 @@ u16 es5505_device::read(offs_t offset)
 
 void es5505_device::voice_bank_w(int voice, int bank)
 {
+	m_vgm_log->Write(0x00, 0x40 | voice, bank >> 20);
 #if RAINE_CHECK
 	m_voice[voice].control = CONTROL_STOPMASK;
 #endif

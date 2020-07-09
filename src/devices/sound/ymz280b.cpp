@@ -31,6 +31,7 @@
 
 
 #include "emu.h"
+#include "vgmwrite.hpp"
 #include "ymz280b.h"
 
 #if YMZ280B_MAKE_WAVS
@@ -573,6 +574,12 @@ void ymz280b_device::device_start()
 	assert(MAX_SAMPLE_CHUNK < 0x10000);
 	m_scratch = std::make_unique<int16_t[]>(MAX_SAMPLE_CHUNK);
 
+	m_vgm_log = machine().vgm_logger().OpenDevice(VGMC_YMZ280B, clock());
+	if (memregion(DEVICE_SELF) != nullptr)
+		m_vgm_log->DumpSampleROM(0x01, memregion(DEVICE_SELF));
+	else
+		m_vgm_log->DumpSampleROM(0x01, space());
+
 	/* state save */
 	save_item(NAME(m_current_register));
 	save_item(NAME(m_status_register));
@@ -917,6 +924,7 @@ void ymz280b_device::write(offs_t offset, u8 data)
 		/* force an update */
 		m_stream->update();
 
+		m_vgm_log->Write(0x00, m_current_register, data);
 		write_to_register(data);
 	}
 }

@@ -30,7 +30,7 @@ public:
 	segapcm_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock);
 
 	// configuration
-	void set_bank(int bank) { m_bankshift = (bank & 0xf); m_bankmask = (0x70|((bank >> 16) & 0xfc)); }
+	void set_bank(int bank);
 
 	void write(offs_t offset, uint8_t data);
 	uint8_t read(offs_t offset);
@@ -52,6 +52,7 @@ private:
 	int m_bankshift;
 	int m_bankmask;
 	sound_stream* m_stream;
+	VGMDeviceLog* m_vgm_log;
 };
 
 DECLARE_DEVICE_TYPE(SEGAPCM, segapcm_device)

@@ -116,6 +116,7 @@
 */
 
 #include "emu.h"
+#include "vgmwrite.hpp"
 #include "includes/x68k.h"
 #include "machine/x68k_hdc.h"
 #include "machine/x68k_kbd.h"
@@ -566,10 +567,12 @@ void x68k_state::ppi_port_c_w(uint8_t data)
 			LOGMASKED(LOG_SYS, "PPI: Invalid ADPCM sample rate set.\n");
 
 		set_adpcm();
-		m_okim6258->set_divider(m_adpcm.rate);
+		//m_okim6258->set_divider(m_adpcm.rate);
 		m_adpcm_out[0]->flt_volume_set_volume((m_adpcm.pan & 1) ? 0.0f : 1.0f);
 		m_adpcm_out[1]->flt_volume_set_volume((m_adpcm.pan & 2) ? 0.0f : 1.0f);
 	}
+	m_okim6258->get_vgmlog_dev()->Write(0x00, 0x02, m_adpcm.pan);
+	m_okim6258->set_divider(m_adpcm.rate);	// write always, for proper VGM logging
 
 	// The joystick enable bits also handle the multiplexer for various controllers
 	m_joy.joy1_enable = data & 0x10;

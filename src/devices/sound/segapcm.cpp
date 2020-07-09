@@ -5,6 +5,7 @@
 /*********************************************************/
 
 #include "emu.h"
+#include "vgmwrite.hpp"
 #include "segapcm.h"
 
 #include <algorithm>
@@ -25,7 +26,16 @@ segapcm_device::segapcm_device(const machine_config &mconfig, const char *tag, d
 	, m_bankshift(12)
 	, m_bankmask(0x70)
 	, m_stream(nullptr)
+	, m_vgm_log(nullptr)
 {
+}
+
+
+void segapcm_device::set_bank(int bank)
+{
+	m_bankshift = (bank & 0xf);
+	m_bankmask = (0x70|((bank >> 16) & 0xfc));
+	m_vgm_log->SetProperty(0x01, bank);
 }
 
 
@@ -40,6 +50,13 @@ void segapcm_device::device_start()
 	std::fill(&m_ram[0], &m_ram[0x800], 0xff);
 
 	m_stream = stream_alloc(0, 2, clock() / 128);
+
+	m_vgm_log = machine().vgm_logger().OpenDevice(VGMC_SEGAPCM, clock());
+	m_vgm_log->SetProperty(0x01, (m_bankmask << 16) | (m_bankshift << 0));
+	if (memregion(DEVICE_SELF) != nullptr)
+		m_vgm_log->DumpSampleROM(0x01, memregion(DEVICE_SELF));
+	else
+		m_vgm_log->DumpSampleROM(0x01, space());
 
 	save_item(NAME(m_low));
 	save_pointer(NAME(m_ram), 0x800);
@@ -149,6 +166,7 @@ void segapcm_device::sound_stream_update(sound_stream &stream, stream_sample_t *
 void segapcm_device::write(offs_t offset, uint8_t data)
 {
 	m_stream->update();
+	m_vgm_log->Write(0x00, offset & 0xFFFF, data);
 	m_ram[offset & 0x07ff] = data;
 }
 
