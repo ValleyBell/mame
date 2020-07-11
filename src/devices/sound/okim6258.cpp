@@ -57,6 +57,7 @@ okim6258_device::okim6258_device(const machine_config &mconfig, const char *tag,
 		m_data_in(0),
 		m_nibble_shift(0),
 		m_stream(nullptr),
+		m_vgm_log(VGMLogger::GetDummyChip()),
 		m_output_bits(0),
 		m_signal(0),
 		m_step(0)

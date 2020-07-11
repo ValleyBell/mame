@@ -1683,6 +1683,7 @@ ym2151_device::ym2151_device(const machine_config &mconfig, device_type type, co
 	: device_t(mconfig, type, tag, owner, clock),
 		device_sound_interface(mconfig, *this),
 		m_stream(nullptr),
+		m_vgm_log(VGMLogger::GetDummyChip()),
 		m_lastreg(0),
 		m_irqhandler(*this),
 		m_portwritehandler(*this),

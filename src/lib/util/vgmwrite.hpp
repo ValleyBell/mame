@@ -32,6 +32,8 @@ private:
 	};
 
 public:
+	VGMDeviceLog();
+	bool IsValid(void) const;
 	void Write(uint8_t port, uint16_t r, uint8_t v);
 	void WriteLargeData(uint8_t type, uint32_t datasize, uint32_t value1, uint32_t value2, const void* data);
 	void SetProperty(uint8_t attr, uint32_t data);
@@ -184,10 +186,12 @@ private:
 		uint8_t NesMem[0x4000];
 	};
 public:
-	void Start(running_machine &machine);
+	VGMLogger(running_machine &machine);
+	void Start(void);
 	void Stop(void);
 	VGMDeviceLog* OpenDevice(uint8_t chipType, int clock);
 	VGMDeviceLog* GetChip(uint8_t chipType, uint8_t instance);
+	static VGMDeviceLog* GetDummyChip(void);
 	void ChangeROMData(uint32_t oldsize, const void* olddata, uint32_t newsize, const void* newdata);
 	
 private:
@@ -209,29 +213,6 @@ private:
 	GD3_TAG _tag;
 };
 
-
-
-// vgm_start → VGMLogger::Start
-// vgm_stop → VGMLogger::Stop
-// vgm_open → VGMLogger::OpenDevice
-// vgm_header_set → VGMDeviceLog::SetProperty
-// vgm_write → VGMDeviceLog::Write
-// vgm_write_large_data → VGMDeviceLog::WriteLargeData
-// vgm_get_chip_idx → VGMLogger::GetChip
-// vgm_change_rom_data → VGMLogger::ChangeROMData
-// vgm_dump_sample_rom → VGMLogger::DumpSampleROM
-// vgm_dump_sample_rom → VGMLogger::DumpSampleROM
-
-/*void vgm_start(running_machine &machine);
-void vgm_stop(void);
-uint16_t vgm_open(uint8_t chip_type, int clock);
-void vgm_header_set(uint16_t chip_id, uint8_t attr, uint32_t data);
-void vgm_write(uint16_t chip_id, uint8_t port, uint16_t r, uint8_t v);
-void vgm_write_large_data(uint16_t chip_id, uint8_t type, uint32_t datasize, uint32_t value1, uint32_t value2, const void* data);
-uint16_t vgm_get_chip_idx(uint8_t chip_type, uint8_t Num);
-void vgm_change_rom_data(uint32_t oldsize, const void* olddata, uint32_t newsize, const void* newdata);
-void vgm_dump_sample_rom(uint16_t chip_id, uint8_t type, memory_region* region);
-void vgm_dump_sample_rom(uint16_t chip_id, uint8_t type, address_space& space);*/
 
 // VGM Chip Constants
 enum ChipTypes : uint8_t

@@ -58,7 +58,8 @@ es5503_device::es5503_device(const machine_config &mconfig, const char *tag, dev
 		device_sound_interface(mconfig, *this),
 		device_rom_interface(mconfig, *this),
 		m_irq_func(*this),
-		m_adc_func(*this)
+		m_adc_func(*this),
+		m_vgm_log(VGMLogger::GetDummyChip())
 {
 }
 

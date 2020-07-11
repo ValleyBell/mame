@@ -2381,10 +2381,10 @@ static OPL3 *OPL3Create(device_t *device, int clock, int rate, int type, int div
 	OPL3ResetChip(chip);
 
 	opl4VgmDev = device->machine().vgm_logger().GetChip(VGMC_YMF278B, 0);
-	if (opl4VgmDev == nullptr)
+	if (opl4VgmDev == nullptr || ! opl4VgmDev->IsValid())
 		chip->m_vgm_log = device->machine().vgm_logger().OpenDevice(VGMC_YMF262, chip->clock);
 	else
-		chip->m_vgm_log = nullptr;	// prevent OPL3+OPL4 (fixes workaround for "Fuuki 32 Bit Games")
+		chip->m_vgm_log = VGMLogger::GetDummyChip();	// prevent OPL3+OPL4 (fixes workaround for "Fuuki 32 Bit Games")
 	return chip;
 }
 

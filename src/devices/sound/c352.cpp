@@ -47,6 +47,7 @@ c352_device::c352_device(const machine_config &mconfig, const char *tag, device_
 	, device_sound_interface(mconfig, *this)
 	, device_rom_interface(mconfig, *this)
 	, m_stream(nullptr)
+	, m_vgm_log(VGMLogger::GetDummyChip())
 {
 }
 

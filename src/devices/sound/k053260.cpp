@@ -100,6 +100,7 @@ k053260_device::k053260_device(const machine_config &mconfig, const char *tag, d
 	, m_sh2_cb(*this)
 	, m_stream(nullptr)
 	, m_timer(nullptr)
+	, m_vgm_log(VGMLogger::GetDummyChip())
 	, m_keyon(0)
 	, m_mode(0)
 	, m_voice{ { *this }, { *this }, { *this }, { *this } }

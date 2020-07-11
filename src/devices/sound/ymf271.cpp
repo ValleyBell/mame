@@ -1824,6 +1824,7 @@ ymf271_device::ymf271_device(const machine_config &mconfig, const char *tag, dev
 	, m_timA(nullptr)
 	, m_timB(nullptr)
 	, m_stream(nullptr)
+	, m_vgm_log(VGMLogger::GetDummyChip())
 	, m_irq_handler(*this)
 {
 	memset(m_slots, 0, sizeof(m_slots));

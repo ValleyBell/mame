@@ -140,6 +140,7 @@ saa1099_device::saa1099_device(const machine_config &mconfig, const char *tag, d
 	: device_t(mconfig, SAA1099, tag, owner, clock)
 	, device_sound_interface(mconfig, *this)
 	, m_stream(nullptr)
+	, m_vgm_log(VGMLogger::GetDummyChip())
 	, m_noise_params{ 0, 0 }
 	, m_env_enable{ false, false }
 	, m_env_reverse_right{ false, false }

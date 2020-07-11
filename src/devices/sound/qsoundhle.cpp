@@ -46,6 +46,7 @@ qsound_hle_device::qsound_hle_device(const machine_config &mconfig, const char *
 	, device_rom_interface(mconfig, *this)
 	, m_stream(nullptr)
 	, m_dsp_rom(*this, "dsp")
+	, m_vgm_log(VGMLogger::GetDummyChip())
 	, m_data_latch(0)
 {
 }

@@ -175,6 +175,7 @@ pokey_device::pokey_device(const machine_config &mconfig, const char *tag, devic
 		device_state_interface(mconfig, *this),
 		m_icount(0),
 		m_stream(nullptr),
+		m_vgm_log(VGMLogger::GetDummyChip()),
 		m_pot_r_cb(*this),
 		m_allpot_r_cb(*this),
 		m_serin_r_cb(*this),

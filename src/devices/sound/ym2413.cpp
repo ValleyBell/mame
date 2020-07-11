@@ -1761,6 +1761,7 @@ ym2413_device::ym2413_device(const machine_config &mconfig, device_type type, co
 	, noise_p(0)
 	, noise_f(0)
 	, address(0)
+	, m_vgm_log(VGMLogger::GetDummyChip())
 
 {
 	for (int i = 0; i < 19; i++)

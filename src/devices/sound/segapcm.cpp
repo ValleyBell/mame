@@ -26,7 +26,7 @@ segapcm_device::segapcm_device(const machine_config &mconfig, const char *tag, d
 	, m_bankshift(12)
 	, m_bankmask(0x70)
 	, m_stream(nullptr)
-	, m_vgm_log(nullptr)
+	, m_vgm_log(VGMLogger::GetDummyChip())
 {
 }
 

@@ -60,6 +60,7 @@ k051649_device::k051649_device(const machine_config &mconfig, const char *tag, d
 	, m_mixer_table(nullptr)
 	, m_mixer_lookup(nullptr)
 	, m_test(0)
+	, m_vgm_log(VGMLogger::GetDummyChip())
 {
 }
 

@@ -119,7 +119,8 @@ void nmk112_device::okibank_w(offs_t offset, u8 data)
 	VGMDeviceLog* vgm_log = chip ? m_vgm_log1 : m_vgm_log0;
 
 	// I want the bank change always to be written to the VGM.
-	vgm_log->Write(0x00, 0x10 | banknum, data);
+	if (vgm_log != nullptr)
+		vgm_log->Write(0x00, 0x10 | banknum, data);
 	
 	if (m_current_bank[offset] != data)
 		do_bankswitch(offset, data);

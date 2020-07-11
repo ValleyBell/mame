@@ -160,6 +160,7 @@ es550x_device::es550x_device(const machine_config &mconfig, device_type type, co
 	, m_scratch(nullptr)
 	, m_ulaw_lookup(nullptr)
 	, m_volume_lookup(nullptr)
+	, m_vgm_log(VGMLogger::GetDummyChip())
 #if ES5506_MAKE_WAVS
 	, m_wavraw(nullptr)
 #endif

@@ -85,6 +85,7 @@ protected:
 
 	int m_sample_rate;
 	sound_stream *m_stream;
+	VGMDeviceLog* m_vgm_log;
 	/* internal buffers */
 	std::unique_ptr<s16[]> m_mixer_buffer_left;
 	std::unique_ptr<s16[]> m_mixer_buffer_right;
@@ -97,8 +98,6 @@ protected:
 	C140_VOICE m_voi[MAX_VOICE];
 
 	emu_timer *m_int1_timer;
-
-	VGMDeviceLog* m_vgm_log;
 };
 
 class c219_device : public c140_device

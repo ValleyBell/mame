@@ -135,7 +135,7 @@ running_machine::running_machine(const machine_config &_config, machine_manager 
 		m_parameters(*this),
 		m_scheduler(*this),
 		m_dummy_space(_config, "dummy_space", &root_device(), 0),
-		m_vgm_logger(std::make_unique<VGMLogger>())
+		m_vgm_logger(std::make_unique<VGMLogger>(*this))
 {
 	memset(&m_base_time, 0, sizeof(m_base_time));
 
@@ -259,7 +259,7 @@ void running_machine::start()
 		device.resolve_post_map();
 
 	// call the Initialisation for VGM logging (MUST be called before driver init)
-	m_vgm_logger->Start(*this);
+	m_vgm_logger->Start();
 
 	// register callbacks for the devices, then start them
 	add_notifier(MACHINE_NOTIFY_RESET, machine_notify_delegate(&running_machine::reset_all_devices, this));

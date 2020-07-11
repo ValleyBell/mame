@@ -154,6 +154,7 @@ scsp_device::scsp_device(const machine_config &mconfig, const char *tag, device_
 		m_main_irq_cb(*this),
 		m_BUFPTR(0),
 		m_stream(nullptr),
+		m_vgm_log(VGMLogger::GetDummyChip()),
 		m_IrqTimA(0),
 		m_IrqTimBC(0),
 		m_IrqMidi(0),

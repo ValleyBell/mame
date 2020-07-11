@@ -163,6 +163,7 @@ sn76496_base_device::sn76496_base_device(
 	: device_t(mconfig, type, tag, owner, clock)
 	, device_sound_interface(mconfig, *this)
 	, m_ready_handler(*this)
+	, m_vgm_log(VGMLogger::GetDummyChip())
 	, m_feedback_mask(feedbackmask)
 	, m_whitenoise_tap1(noisetap1)
 	, m_whitenoise_tap2(noisetap2)

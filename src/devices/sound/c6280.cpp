@@ -298,6 +298,7 @@ DEFINE_DEVICE_TYPE(C6280, c6280_device, "c6280", "Hudson Soft HuC6280 PSG")
 c6280_device::c6280_device(const machine_config &mconfig, const char *tag, device_t *owner, u32 clock)
 	: device_t(mconfig, C6280, tag, owner, clock)
 	, device_sound_interface(mconfig, *this)
+	, m_vgm_log(VGMLogger::GetDummyChip())
 {
 }
 

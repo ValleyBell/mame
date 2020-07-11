@@ -100,6 +100,7 @@ c140_device::c140_device(const machine_config &mconfig, device_type type, const 
 	, m_int1_callback(*this)
 	, m_sample_rate(0)
 	, m_stream(nullptr)
+	, m_vgm_log(VGMLogger::GetDummyChip())
 	, m_mixer_buffer_left(nullptr)
 	, m_mixer_buffer_right(nullptr)
 	, m_baserate(0)

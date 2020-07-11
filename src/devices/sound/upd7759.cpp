@@ -148,6 +148,7 @@ upd775x_device::upd775x_device(const machine_config &mconfig, device_type type, 
 	, device_sound_interface(mconfig, *this)
 	, device_rom_interface(mconfig, *this)
 	, m_channel(nullptr)
+	, m_vgm_log(VGMLogger::GetDummyChip())
 	, m_sample_offset_shift(0)
 	, m_pos(0)
 	, m_step(0)

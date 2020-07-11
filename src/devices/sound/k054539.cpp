@@ -30,6 +30,7 @@ k054539_device::k054539_device(const machine_config &mconfig, const char *tag, d
 	, cur_limit(0)
 	, rom_addr(0)
 	, stream(nullptr)
+	, m_vgm_log(VGMLogger::GetDummyChip())
 	, m_timer(nullptr)
 	, m_timer_state(0)
 	, m_timer_handler(*this)

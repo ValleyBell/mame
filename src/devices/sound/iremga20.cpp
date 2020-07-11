@@ -63,7 +63,8 @@ iremga20_device::iremga20_device(const machine_config &mconfig, const char *tag,
 	device_t(mconfig, IREMGA20, tag, owner, clock),
 	device_sound_interface(mconfig, *this),
 	device_rom_interface(mconfig, *this),
-	m_stream(nullptr)
+	m_stream(nullptr),
+	m_vgm_log(VGMLogger::GetDummyChip())
 {
 }
 

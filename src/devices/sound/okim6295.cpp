@@ -93,7 +93,8 @@ okim6295_device::okim6295_device(const machine_config &mconfig, const char *tag,
 		m_region(*this, DEVICE_SELF),
 		m_command(-1),
 		m_stream(nullptr),
-		m_pin7_state(~uint8_t(0))
+		m_pin7_state(~uint8_t(0)),
+		m_vgm_log(VGMLogger::GetDummyChip())
 {
 }
 

@@ -92,6 +92,7 @@ nesapu_device::nesapu_device(const machine_config &mconfig, const char *tag, dev
 	, m_stream(nullptr)
 	, m_irq_handler(*this)
 	, m_mem_read_cb(*this)
+	, m_vgm_log(VGMLogger::GetDummyChip())
 {
 	for (auto & elem : m_vbl_times)
 	{

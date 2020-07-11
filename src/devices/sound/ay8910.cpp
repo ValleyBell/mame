@@ -1378,7 +1378,11 @@ void ay8910_device::device_start()
 	else if (type() == YM2610 || type() == YM2610B) vgmChipType = 0x22;
 	else vgmChipType = 0xFF;
 
-	if (! (vgmChipType & 0x20))
+	if (vgmChipType & 0x20)
+	{
+		m_vgm_log = VGMLogger::GetDummyChip();
+	}
+	else
 	{
 		m_vgm_log = machine().vgm_logger().OpenDevice(VGMC_AY8910, clock());
 		m_vgm_log->SetProperty(0x00, vgmChipType);
@@ -1386,10 +1390,6 @@ void ay8910_device::device_start()
 		m_vgm_log->SetProperty(0x10, m_res_load[0]);
 		m_vgm_log->SetProperty(0x11, m_res_load[1]);
 		m_vgm_log->SetProperty(0x12, m_res_load[2]);
-	}
-	else
-	{
-		m_vgm_log = nullptr;
 	}
 }
 
@@ -1677,7 +1677,8 @@ ay8910_device::ay8910_device(const machine_config &mconfig, device_type type, co
 		m_port_a_read_cb(*this),
 		m_port_b_read_cb(*this),
 		m_port_a_write_cb(*this),
-		m_port_b_write_cb(*this)
+		m_port_b_write_cb(*this),
+		m_vgm_log(VGMLogger::GetDummyChip())
 {
 	memset(&m_regs,0,sizeof(m_regs));
 	memset(&m_tone,0,sizeof(m_tone));

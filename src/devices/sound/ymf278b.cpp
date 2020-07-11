@@ -1065,6 +1065,7 @@ ymf278b_device::ymf278b_device(const machine_config &mconfig, const char *tag, d
 	: device_t(mconfig, YMF278B, tag, owner, clock)
 	, device_sound_interface(mconfig, *this)
 	, device_rom_interface(mconfig, *this)
+	, m_vgm_log(VGMLogger::GetDummyChip())
 	, m_irq_handler(*this)
 	, m_last_fm_data(0)
 {

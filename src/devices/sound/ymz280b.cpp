@@ -948,6 +948,7 @@ ymz280b_device::ymz280b_device(const machine_config &mconfig, const char *tag, d
 	, m_ext_mem_address_mid(0)
 	, m_ext_mem_address(0)
 	, m_irq_handler(*this)
+	, m_vgm_log(VGMLogger::GetDummyChip())
 {
 	memset(m_voice, 0, sizeof(m_voice));
 }

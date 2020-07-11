@@ -47,6 +47,7 @@ rf5c68_device::rf5c68_device(const machine_config & mconfig, device_type type, c
 	, device_memory_interface(mconfig, *this)
 	, m_data_config("data", ENDIANNESS_LITTLE, 8, 16) // 15 bit Address + 2 Memory select outputs(total 64KB), PSRAM/SRAM/ROM
 	, m_stream(nullptr)
+	, m_vgm_log(VGMLogger::GetDummyChip())
 	, m_cbank(0)
 	, m_wbank(0)
 	, m_enable(0)

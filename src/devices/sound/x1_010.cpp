@@ -93,6 +93,7 @@ x1_010_device::x1_010_device(const machine_config &mconfig, const char *tag, dev
 	, device_rom_interface(mconfig, *this)
 	, m_rate(0)
 	, m_stream(nullptr)
+	, m_vgm_log(VGMLogger::GetDummyChip())
 	, m_sound_enable(0)
 	, m_reg(nullptr)
 	, m_HI_WORD_BUF(nullptr)
