@@ -306,6 +306,7 @@ void ngcd_state::control_w(address_space &space, offs_t offset, uint16_t data, u
 		case 0x0142:
 //          bprintf(PRINT_NORMAL, _T("  - NGCD PCM BUSREQ -> 0 (PC: 0x%06X)\n"), SekGetPC(-1));
 			m_has_ymrom_bus = true;
+			if (m_ym->get_vgmlog_dev())
 			{
 				uint32_t RAMSize;
 				void* RAMData;

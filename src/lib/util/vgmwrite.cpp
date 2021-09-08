@@ -475,7 +475,11 @@ void VGMLogger::Header_PostWrite(VGM_INF& vf)
 		templng |= (vrd.dstart_msb << 24);
 		fwrite(&templng, 0x04, 0x01, vf.hFile);		// Data Base Address
 		if (vrd.Data != nullptr)
-			fwrite(vrd.Data, 0x01, vrd.DataSize, vf.hFile);
+		{
+			size_t wrtByt = fwrite(vrd.Data, 0x01, vrd.DataSize, vf.hFile);
+			if (wrtByt != vrd.DataSize)
+				print_info("Warning VGM Header_PostWrite: wrote only 0x%X bytes instead of 0x%X!\n", (uint32_t)wrtByt, vrd.DataSize);
+		}
 		vf.BytesWrt += 0x07 + (blkSize & 0x7FFFFFFF);
 	}
 	for (curcmd = 0x00; curcmd < vf.CmdCount; curcmd ++)
@@ -2157,7 +2161,13 @@ void VGMDeviceLog::WriteLargeData(uint8_t type, uint32_t datasize, uint32_t valu
 		fwrite(&finalSize, 0x04, 0x01, vf.hFile);	// Data Block Size
 		fwrite(&datasize, 0x04, 0x01, vf.hFile);	// ROM Size
 		fwrite(&value1, 0x04, 0x01, vf.hFile);		// Data Base Address
-		fwrite(data, 0x01, value2, vf.hFile);
+		{
+			size_t wrtByt = fwrite(data, 0x01, value2, vf.hFile);
+			if (wrtByt != value2)
+				print_info("Warning VGM WriteLargeData: wrote only 0x%X bytes instead of 0x%X!\n", (uint32_t)wrtByt, value2);
+			//else
+			//	print_info("Wrote 0x%X bytes, new file ofs: 0x%X\n", (uint32_t)wrtByt, ftell(vf.hFile));
+		}
 		vf.BytesWrt += 0x07 + (finalSize & 0x7FFFFFFF);
 		break;
 	case 0xC0:	// RAM Writes

@@ -558,6 +558,7 @@
 
 #include "irrmaze.lh"
 #include "neogeo.lh"
+#include "vgmwrite.hpp"
 
 
 #define LOG_VIDEO_SYSTEM         (0)
@@ -1363,6 +1364,16 @@ void neogeo_base_state::init_ym()
 		adpcm_b_space.install_rom(0, m_slots[m_curr_slot]->get_ymdelta_size() - 1, m_slots[m_curr_slot]->get_ymdelta_base());
 	else if (m_slots[m_curr_slot] && m_slots[m_curr_slot]->get_ym_size())
 		adpcm_b_space.install_rom(0, m_slots[m_curr_slot]->get_ym_size() - 1, m_slots[m_curr_slot]->get_ym_base());
+	if (m_slots[m_curr_slot] && m_ym->get_vgmlog_dev())
+	{
+		auto& slot = *m_slots[m_curr_slot];
+		if (slot.get_ym_size())
+			m_ym->get_vgmlog_dev()->WriteLargeData(0x01, slot.get_ym_size(), 0x00, 0x00, slot.get_ym_base());	// ADPCM-A
+		if (slot.get_ymdelta_size())
+			m_ym->get_vgmlog_dev()->WriteLargeData(0x02, slot.get_ymdelta_size(), 0x00, 0x00, slot.get_ymdelta_base());	// ADPCM-B
+		else if (slot.get_ym_size())
+			m_ym->get_vgmlog_dev()->WriteLargeData(0x02, slot.get_ym_size(), 0x00, 0x00, slot.get_ym_base());	// ADPCM-B
+	}
 }
 
 void neogeo_base_state::init_sprites()

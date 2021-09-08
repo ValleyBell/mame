@@ -122,8 +122,17 @@ void ym2610_device::device_start()
 			&ym2610_device::static_timer_handler, &ym2610_device::static_irq_handler, &psgintf);
 	if (!m_chip)
 		throw emu_fatalerror("ym2610_device(%s): Error creating YM2610 chip", tag());
-	get_vgmlog_dev()->DumpSampleROM(0x01, space(0));	// ADPCM-A
-	get_vgmlog_dev()->DumpSampleROM(0x02, space(1));	// ADPCM-B
+	if (get_vgmlog_dev())
+	{
+		//get_vgmlog_dev()->DumpSampleROM(0x01, space(0));	// ADPCM-A
+		//get_vgmlog_dev()->DumpSampleROM(0x02, space(1));	// ADPCM-B
+		if (m_adpcm_a_region)
+			get_vgmlog_dev()->DumpSampleROM(0x01, m_adpcm_a_region);	// ADPCM-A
+		if (m_adpcm_b_region)
+			get_vgmlog_dev()->DumpSampleROM(0x02, m_adpcm_b_region);	// ADPCM-B
+		else if (m_adpcm_a_region)
+			get_vgmlog_dev()->DumpSampleROM(0x02, m_adpcm_a_region);	// ADPCM-B (shared with -A)
+	}
 }
 
 //-------------------------------------------------
