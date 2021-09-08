@@ -981,7 +981,7 @@ void VGMDeviceLog::SetupPCMCache(uint32_t size)
 void VGMDeviceLog::SetProperty(uint8_t attr, uint32_t data)
 {
 	if (_machine != nullptr)
-		print_info("Property Set to Chip 0x%02X, Attr 0x%02X, Data 0x%02X [vgmlog: %p]\n", _chipType, attr, data, _vgmlog);
+		print_info("Property Set to Chip 0x%02X, Attr 0x%02X, Data 0x%02X\n", _chipType, attr, data);
 	if (_vgmlog == nullptr || ! _vgmlog->_logging)
 		return;
 	
@@ -1144,6 +1144,9 @@ void VGMDeviceLog::SetProperty(uint8_t attr, uint32_t data)
 		{
 		case 0x00:	// Chip Type (set master/slave mode)
 			vh.lngHzUPD7759 = (vh.lngHzUPD7759 & 0x7FFFFFFF) | (data << 31);
+			break;
+		case 0x01:	// uPD7759/56 mode
+			// not stored into VGMs yet
 			break;
 		}
 		break;
@@ -1348,7 +1351,7 @@ void VGMLogger::WriteDelay(VGM_INF& vf)
 
 void VGMDeviceLog::Write(uint8_t port, uint16_t r, uint8_t v)
 {
-	//print_info("Write to Chip 0x%02X, Port 0x%02X, Reg 0x%02X, Data 0x%02X [vgmlog: %p]\n", _chipType, port, r, v, _vgmlog);
+	//print_info("Write to Chip 0x%02X, Port 0x%02X, Reg 0x%02X, Data 0x%02X\n", _chipType, port, r, v);
 	if (_vgmlog == nullptr || ! _vgmlog->_logging)
 		return;
 	
@@ -2399,10 +2402,19 @@ void VGMDeviceLog::DumpSampleROM(uint8_t type, memory_region* region)
 
 void VGMDeviceLog::DumpSampleROM(uint8_t type, address_space& space)
 {
+	print_info("Space Info: Name %s, Size: 0x%X, Device Name: %s, Device BaseTag: %s\n",
+			space.name(), space.addrmask() + 1, space.device().name(), space.device().basetag());
+	
+	memory_region* rom_region = _machine->root_device().memregion(space.device().basetag());	// get memory region of space's root device
+	if (rom_region)
+	{
+		DumpSampleROM(type, rom_region);
+		return;
+	}
+	
 	uint32_t dataSize = space.addrmask() + 1;
 	const void* dataPtr = space.get_read_ptr(0);
-	
-	print_info("VGM - Dumping ROM-Space %s: size 0x%X, space-ptr %p\n", space.name(), dataSize, dataPtr);
+	print_info("VGM - Dumping Device-Space %s: size 0x%X, space-ptr %p\n", space.name(), dataSize, dataPtr);
 	WriteLargeData(type, dataSize, 0x00, 0x00, dataPtr);
 	
 	return;

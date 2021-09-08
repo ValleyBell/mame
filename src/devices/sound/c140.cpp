@@ -154,20 +154,25 @@ void c140_device::device_start()
 	m_mixer_buffer_left = std::make_unique<s16[]>(m_sample_rate);
 	m_mixer_buffer_right = std::make_unique<s16[]>(m_sample_rate);
 
-	m_vgm_log = machine().vgm_logger().OpenDevice(VGMC_C140, clock());
+	int vgmclk = clock() * 576;
+	if (vgmclk == 12287808)
+		vgmclk = 12288000;
+	m_vgm_log = machine().vgm_logger().OpenDevice(VGMC_C140, vgmclk);
 	if (type() == C219)
 		m_vgm_log->SetProperty(0x01, 0x02);
 	else //if (m_banking_type == C140_TYPE::SYSTEM2)
 		m_vgm_log->SetProperty(0x01, 0x00);
 	//else if (m_banking_type == C140_TYPE::SYSTEM21)
 	//	m_vgm_log->SetProperty(0x01, 0x01);
-	if (true)	// TODO: Are we still able to detect if this is ROM or RAM?
+	if (memregion(DEVICE_SELF))
 	{
 		m_vgm_log->DumpSampleROM(0x01, memregion(DEVICE_SELF));
 	}
 	else
 	{
 		logerror("VGM Warning: C140 wants to use dynamic memory (i.e. RAM)!\n");
+		// just dumping the whole space crashes
+		//m_vgm_log->DumpSampleROM(0x01, space());
 	}
 
 	save_item(NAME(m_REG));
@@ -505,6 +510,8 @@ void c140_device::c140_w(offs_t offset, u8 data)
 	m_stream->update();
 
 	offset &= 0x1ff;
+
+	m_vgm_log->Write(0x00, offset, data);
 
 	m_REG[offset] = data;
 	if (offset < 0x180)

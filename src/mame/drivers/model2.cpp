@@ -2440,7 +2440,7 @@ void model2_state::model2snd_ctrl(u16 data)
 
 void model2_state::model2_snd(address_map &map)
 {
-	//map(0x000000, 0x07ffff).rw(m_scsp, FUNC(scsp_device::mem_read), FUNC(scsp_device::mem_write));	// seems to always crash
+	//map(0x000000, 0x07ffff).rw(m_scsp, FUNC(scsp_device::mem_read), FUNC(scsp_device::mem_write)).share("soundram");	// seems to always crash
 	map(0x000000, 0x07ffff).ram().share("soundram");
 	map(0x100000, 0x100fff).rw(m_scsp, FUNC(scsp_device::read), FUNC(scsp_device::write));
 	map(0x400000, 0x400001).w(FUNC(model2_state::model2snd_ctrl));

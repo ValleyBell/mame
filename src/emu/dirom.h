@@ -21,6 +21,7 @@ public:
 	virtual ~device_rom_interface() = default;
 
 	void set_device_rom_tag(const char *tag) { m_rom_tag = tag; }
+	const char* get_device_rom_tag() { return m_rom_tag; }
 
 	inline u8 read_byte(offs_t byteaddress) { return m_rom_cache.read_byte(byteaddress); }
 	inline u16 read_word(offs_t byteaddress) { return m_rom_cache.read_word(byteaddress); }

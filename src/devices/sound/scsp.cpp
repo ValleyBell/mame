@@ -1507,13 +1507,12 @@ void scsp_device::mem_write(offs_t offset, u16 data, u16 mem_mask)
 	ScspRam[offset] = tmp;
 	
 	offset <<= 1;
-	if (offset >= 0x08000)	// don't log the RAM areas used by the audio cpu
-	{
-		if (ACCESSING_BITS_8_15)
-			m_vgm_log->Write(0x80 | ADDR_HIGH(offset), ADDR_LOW(offset) | 0x00, (data & 0xFF00) >> 8);
-		if (ACCESSING_BITS_0_7)
-			m_vgm_log->Write(0x80 | ADDR_HIGH(offset), ADDR_LOW(offset) | 0x01, (data & 0x00FF) >> 0);
-	}
+	if (offset < 0x08000)	// don't log the RAM areas used by the audio cpu
+		return;
+	if (ACCESSING_BITS_8_15)
+		m_vgm_log->Write(0x80 | ADDR_HIGH(offset), ADDR_LOW(offset) | 0x00, (data & 0xFF00) >> 8);
+	if (ACCESSING_BITS_0_7)
+		m_vgm_log->Write(0x80 | ADDR_HIGH(offset), ADDR_LOW(offset) | 0x01, (data & 0x00FF) >> 0);
 	
 	return;
 }

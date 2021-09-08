@@ -328,7 +328,19 @@ void k054539_device::init_chip()
 
 	m_vgm_log = machine().vgm_logger().OpenDevice(VGMC_K054539, clock());
 	m_vgm_log->SetProperty(0x01, flags);
-	m_vgm_log->DumpSampleROM(0x01, memregion(DEVICE_SELF));
+	if (memregion(DEVICE_SELF) != nullptr)
+	{
+		m_vgm_log->DumpSampleROM(0x01, memregion(DEVICE_SELF));
+	}
+	else
+	{
+		logerror("ROM Tag: %s\n", get_device_rom_tag());
+		auto memreg = machine().root_device().memregion(get_device_rom_tag());
+		if (memreg != nullptr)
+			m_vgm_log->DumpSampleROM(0x01, memreg);
+		else
+			m_vgm_log->DumpSampleROM(0x01, space());	// try to look up the ROM via space
+	}
 
 	save_item(NAME(voltab));
 	save_item(NAME(pantab));

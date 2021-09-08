@@ -576,9 +576,18 @@ void ymz280b_device::device_start()
 
 	m_vgm_log = machine().vgm_logger().OpenDevice(VGMC_YMZ280B, clock());
 	if (memregion(DEVICE_SELF) != nullptr)
+	{
 		m_vgm_log->DumpSampleROM(0x01, memregion(DEVICE_SELF));
+	}
 	else
-		m_vgm_log->DumpSampleROM(0x01, space());
+	{
+		logerror("ROM Tag: %s\n", get_device_rom_tag());
+		auto memreg = machine().root_device().memregion(get_device_rom_tag());
+		if (memreg != nullptr)
+			m_vgm_log->DumpSampleROM(0x01, memreg);
+		else
+			m_vgm_log->DumpSampleROM(0x01, space());	// try to look up the ROM via space
+	}
 
 	/* state save */
 	save_item(NAME(m_current_register));

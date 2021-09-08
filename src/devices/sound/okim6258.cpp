@@ -122,9 +122,9 @@ void okim6258_device::device_start()
 	m_step = 0;
 
 	m_vgm_log = machine().vgm_logger().OpenDevice(VGMC_OKIM6258, clock());
-	m_vgm_log->SetProperty(0x01, m_divider);
+	m_vgm_log->SetProperty(0x01, m_start_divider);
 	m_vgm_log->SetProperty(0x02, m_adpcm_type);
-	m_vgm_log->SetProperty(0x03, m_output_bits);
+	m_vgm_log->SetProperty(0x03, (m_output_bits == OUTPUT_12BITS));
 
 	state_save_register();
 }

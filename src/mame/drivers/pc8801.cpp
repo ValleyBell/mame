@@ -262,7 +262,8 @@
 #define IRQ_DEBUG       (0)
 #define IRQ_LOG(x) do { if (IRQ_DEBUG) printf x; } while (0)
 
-#define MASTER_CLOCK XTAL(4'000'000)
+//#define MASTER_CLOCK XTAL(4'000'000)
+#define MASTER_CLOCK XTAL(3'993'600)
 // TODO: exact clocks
 #define PIXEL_CLOCK_15KHz XTAL(14'318'181)
 #define PIXEL_CLOCK_24KHz XTAL(21'477'272)

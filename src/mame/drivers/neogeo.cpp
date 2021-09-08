@@ -1367,6 +1367,7 @@ void neogeo_base_state::init_ym()
 	if (m_slots[m_curr_slot] && m_ym->get_vgmlog_dev())
 	{
 		auto& slot = *m_slots[m_curr_slot];
+		logerror("VGM - Dumping NeoGeo ADPCM ROMs for %s\n", slot.basetag());
 		if (slot.get_ym_size())
 			m_ym->get_vgmlog_dev()->WriteLargeData(0x01, slot.get_ym_size(), 0x00, 0x00, slot.get_ym_base());	// ADPCM-A
 		if (slot.get_ymdelta_size())
