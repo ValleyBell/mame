@@ -22,6 +22,7 @@
 */
 
 #include "emu.h"
+#include "vgmwrite.hpp"
 #include "ymf271.h"
 
 #include <algorithm>
@@ -1326,7 +1327,7 @@ void ymf271_device::device_timer(emu_timer &timer, device_timer_id id, int param
 			}
 
 			// reload timer
-			m_timA->adjust(clocks_to_attotime(384 * 4 * (256 - m_timerA)), 0);
+			m_timA->adjust(clocks_to_attotime(384 * (1024 - m_timerA)), 0);
 			break;
 
 		case 1:
@@ -1371,7 +1372,7 @@ void ymf271_device::ymf271_write_timer(uint8_t address, uint8_t data)
 		switch (address)
 		{
 			case 0x10:
-				m_timerA = data;
+				m_timerA = (data << 2) | (m_timerA & 0x03);
 				break;
 
 			case 0x11:
@@ -1379,6 +1380,7 @@ void ymf271_device::ymf271_write_timer(uint8_t address, uint8_t data)
 				// (it says timer A is 10 bits). But, PCB audio recordings proves
 				// otherwise: it doesn't affect timer A frequency. (see ms32.c tetrisp)
 				// Does this register have another function regarding timer A/B?
+				m_timerA = (m_timerA & ~0x03) | (data & 0x03);	// assume 2 bits LSB, just like on every other OPx chip
 				break;
 
 			case 0x12:
@@ -1389,7 +1391,7 @@ void ymf271_device::ymf271_write_timer(uint8_t address, uint8_t data)
 				// timer A load
 				if (~m_enable & data & 1)
 				{
-					attotime period = clocks_to_attotime(384 * 4 * (256 - m_timerA));
+					attotime period = clocks_to_attotime(384 * (1024 - m_timerA));
 					m_timA->adjust((data & 1) ? period : attotime::never, 0);
 				}
 
@@ -1462,6 +1464,8 @@ void ymf271_device::write(offs_t offset, u8 data)
 	m_stream->update();
 
 	m_regs_main[offset & 0xf] = data;
+	if (offset & 0x01)
+		m_vgm_log->Write(offset >> 1, m_regs_main[offset & 0x0E], data);
 
 	switch (offset & 0xf)
 	{
@@ -1744,6 +1748,9 @@ void ymf271_device::device_start()
 
 	m_mix_buffer.resize(m_master_clock/(384/4));
 	m_stream = stream_alloc(0, 4, m_master_clock/384);
+
+	m_vgm_log = machine().vgm_logger().OpenDevice(VGMC_YMF271, m_master_clock);
+	m_vgm_log->DumpSampleROM(0x01, memregion(DEVICE_SELF));
 }
 
 //-------------------------------------------------
@@ -1813,6 +1820,7 @@ ymf271_device::ymf271_device(const machine_config &mconfig, const char *tag, dev
 	, m_timA(nullptr)
 	, m_timB(nullptr)
 	, m_stream(nullptr)
+	, m_vgm_log(VGMLogger::GetDummyChip())
 	, m_irq_handler(*this)
 {
 	memset(m_slots, 0, sizeof(m_slots));

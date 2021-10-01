@@ -47,6 +47,7 @@
  *****************************************************************************/
 
 #include "emu.h"
+#include "vgmwrite.hpp"
 #include "nes_apu.h"
 
 /* INTERNAL FUNCTIONS */
@@ -91,6 +92,7 @@ nesapu_device::nesapu_device(const machine_config &mconfig, device_type type, co
 	, m_stream(nullptr)
 	, m_irq_handler(*this)
 	, m_mem_read_cb(*this)
+	, m_vgm_log(VGMLogger::GetDummyChip())
 {
 	for (auto & elem : m_vbl_times)
 	{
@@ -153,6 +155,8 @@ void nesapu_device::device_start()
 	m_mem_read_cb.resolve_safe(0x00);
 
 	calculate_rates();
+
+	m_vgm_log = machine().vgm_logger().OpenDevice(VGMC_NESAPU, clock());
 
 	/* register for save */
 	for (int i = 0; i < 2; i++)
@@ -409,7 +413,7 @@ s8 nesapu_device::apu_noise(apu_t::noise_t *chan)
 }
 
 /* RESET DPCM PARAMETERS */
-static inline void apu_dpcmreset(apu_t::dpcm_t *chan)
+static inline void apu_dpcmreset(apu_t::dpcm_t *chan, VGMDeviceLog* vgmLog)
 {
 	chan->address = 0xC000 + u16(chan->regs[2] << 6);
 	chan->length = u16(chan->regs[3] << 4) + 1;
@@ -417,6 +421,8 @@ static inline void apu_dpcmreset(apu_t::dpcm_t *chan)
 	chan->irq_occurred = false;
 	chan->enabled = true; /* Fixed * Proper DPCM channel ENABLE/DISABLE flag behaviour*/
 	chan->vol = 0; /* Fixed * DPCM DAC resets itself when restarted */
+	// I have no idea how to do this at all since DPCM reads are done using a callback function. [TODO]
+	//vgmLog->WriteLargeData(0x01, 0x10000, chan->address, chan->length, chan->memory->get_read_ptr(0xC000));
 }
 
 /* OUTPUT DPCM WAVE SAMPLE (VALUES FROM -64 to +63) */
@@ -445,7 +451,7 @@ s8 nesapu_device::apu_dpcm(apu_t::dpcm_t *chan)
 				chan->enabled = false; /* Fixed * Proper DPCM channel ENABLE/DISABLE flag behaviour*/
 				chan->vol=0; /* Fixed * DPCM DAC resets itself when restarted */
 				if (chan->regs[0] & 0x40)
-					apu_dpcmreset(chan);
+					apu_dpcmreset(chan, m_vgm_log);
 				else
 				{
 					if (chan->regs[0] & 0x80) /* IRQ Generator */
@@ -614,7 +620,7 @@ inline void nesapu_device::apu_regwrite(int address, u8 value)
 
 	case apu_t::WRE2:
 		m_APU.dpcm.regs[2] = value;
-		//apu_dpcmreset(m_APU.dpcm);
+		//apu_dpcmreset(&m_APU.dpcm, m_vgm_log);
 		break;
 
 	case apu_t::WRE3:
@@ -670,7 +676,7 @@ inline void nesapu_device::apu_regwrite(int address, u8 value)
 			if (false == m_APU.dpcm.enabled)
 			{
 				m_APU.dpcm.enabled = true;
-				apu_dpcmreset(&m_APU.dpcm);
+				apu_dpcmreset(&m_APU.dpcm, m_vgm_log);
 			}
 		}
 		else
@@ -725,6 +731,7 @@ void nesapu_device::write(offs_t address, u8 value)
 {
 	m_APU.regs[address]=value;
 	m_stream->update();
+	m_vgm_log->Write(0x00, address, value);
 	apu_regwrite(address,value);
 }
 

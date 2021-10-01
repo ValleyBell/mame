@@ -83,6 +83,7 @@ Ensoniq OTIS - ES5505                                            Ensoniq OTTO - 
 ***********************************************************************************************/
 
 #include "emu.h"
+#include "vgmwrite.hpp"
 #include "es5506.h"
 #include <algorithm>
 

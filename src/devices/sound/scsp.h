@@ -34,6 +34,9 @@ public:
 	u16 read(offs_t offset);
 	void write(offs_t offset, u16 data, u16 mem_mask = ~0);
 
+	u16 mem_read(offs_t offset);
+	void mem_write(offs_t offset, u16 data, u16 mem_mask = ~0);
+
 	// MIDI I/O access (used for comms on Model 2/3)
 	void midi_in(u8 data);
 	u16 midi_out_r();
@@ -113,6 +116,7 @@ private:
 	u8 m_DELAYPTR;
 #endif
 	sound_stream * m_stream;
+	VGMDeviceLog* m_vgm_log;
 
 	u32 m_IrqTimA;
 	u32 m_IrqTimBC;

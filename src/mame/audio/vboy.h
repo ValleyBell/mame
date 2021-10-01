@@ -83,6 +83,8 @@ protected:
 	emu_timer *m_timer;
 
 	uint8_t m_aram[0x600];
+
+	VGMDeviceLog* m_vgm_log;
 };
 
 // device type definition

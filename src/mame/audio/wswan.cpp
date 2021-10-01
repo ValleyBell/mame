@@ -14,6 +14,7 @@ The noise taps and behavior are the same as the Virtual Boy.
 **************************************************************************************/
 
 #include "emu.h"
+#include "vgmwrite.hpp"
 #include "wswan.h"
 
 
@@ -63,6 +64,8 @@ static constexpr int clk_div = 64;
 void wswan_sound_device::device_start()
 {
 	m_channel = stream_alloc(0, 2, clock() / clk_div);
+
+	m_vgm_log = machine().vgm_logger().OpenDevice(VGMC_WSWAN, clock());
 
 	save_item(NAME(m_sweep_step));
 	save_item(NAME(m_sweep_time));
@@ -277,6 +280,15 @@ u16 wswan_sound_device::port_r(offs_t offset, u16 mem_mask)
 void wswan_sound_device::port_w(offs_t offset, u16 data, u16 mem_mask)
 {
 	m_channel->update();
+
+	if (offset & (0x80 / 2))
+	{
+		u8 vgm_ofs = (offset * 2) & 0x7F;
+		if (ACCESSING_BITS_0_7)
+			m_vgm_log->Write(0x00, vgm_ofs | 1, (data >> 0) & 0xFF);
+		if (ACCESSING_BITS_8_15)
+			m_vgm_log->Write(0x00, vgm_ofs | 1, (data >> 8) & 0xFF);
+	}
 
 	switch (offset)
 	{

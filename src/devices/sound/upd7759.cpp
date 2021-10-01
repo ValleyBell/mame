@@ -123,6 +123,7 @@
 *************************************************************/
 
 #include "emu.h"
+#include "vgmwrite.hpp"
 #include "upd7759.h"
 
 
@@ -147,6 +148,7 @@ upd775x_device::upd775x_device(const machine_config &mconfig, device_type type, 
 	, device_sound_interface(mconfig, *this)
 	, device_rom_interface(mconfig, *this)
 	, m_channel(nullptr)
+	, m_vgm_log(VGMLogger::GetDummyChip())
 	, m_sample_offset_shift(0)
 	, m_pos(0)
 	, m_step(0)
@@ -218,6 +220,11 @@ void upd775x_device::device_start()
 	// compute the clock period
 	m_clock_period = clock() ? attotime::from_hz(clock()) : attotime::zero;
 
+	m_vgm_log = machine().vgm_logger().OpenDevice(VGMC_UPD7759, clock());
+	m_vgm_log->SetProperty(0x01, m_sample_offset_shift);	// set uPD7759/56 mode
+	m_vgm_log->SetProperty(0x00, m_md ? 0x00 : 0x01);	// write master/slave mode
+	m_vgm_log->DumpSampleROM(0x01, memregion(DEVICE_SELF));
+
 	save_item(NAME(m_pos));
 	save_item(NAME(m_step));
 
@@ -263,6 +270,7 @@ void upd7759_device::device_start()
 
 	// chip configuration
 	m_sample_offset_shift = 1;
+	m_vgm_log->SetProperty(0x01, m_sample_offset_shift);	// set uPD7759 mode
 
 	m_timer = timer_alloc(TID_SLAVE_UPDATE);
 
@@ -654,9 +662,17 @@ void upd775x_device::internal_reset_w(int state)
 	/* update the stream first */
 	m_channel->update();
 
+	m_vgm_log->Write(0x00, 0x00, state);
+
 	/* on the falling edge, reset everything */
 	if (oldreset && !m_reset)
 		device_reset();
+}
+
+WRITE_LINE_MEMBER( upd7759_device::md_w )
+{
+	m_md = state;
+	m_vgm_log->SetProperty(0x00, m_md ? 0x00 : 0x01);	// write master/slave mode
 }
 
 WRITE_LINE_MEMBER( upd775x_device::start_w )
@@ -675,6 +691,8 @@ void upd7759_device::internal_start_w(int state)
 
 	/* update the stream first */
 	m_channel->update();
+
+	m_vgm_log->Write(0x00, 0x01, state);
 
 	/* on the rising edge, if we're idle, start going, but not if we're held in reset */
 	if (m_state == STATE_IDLE && !oldstart && m_start && m_reset)
@@ -700,6 +718,8 @@ void upd7756_device::internal_start_w(int state)
 	/* update the stream first */
 	m_channel->update();
 
+	m_vgm_log->Write(0x00, 0x01, state);
+
 	/* on the rising edge, if we're idle, start going, but not if we're held in reset */
 	if (m_state == STATE_IDLE && !oldstart && m_start && m_reset)
 	{
@@ -710,6 +730,8 @@ void upd7756_device::internal_start_w(int state)
 
 void upd775x_device::port_w(u8 data)
 {
+	m_vgm_log->Write(0x00, 0x02, data);
+	
 	/* update the FIFO value */
 	synchronize(TID_PORT_WRITE, data);
 }

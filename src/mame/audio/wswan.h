@@ -6,6 +6,7 @@
 #pragma once
 
 #include "dirom.h"
+#include "vgmwrite.hpp"
 
 //**************************************************************************
 //  TYPE DEFINITIONS
@@ -79,6 +80,7 @@ private:
 	u16  m_noise_shift;
 	u8   m_master_volume;
 	u8   m_system_volume;
+	VGMDeviceLog* m_vgm_log;
 };
 
 DECLARE_DEVICE_TYPE(WSWAN_SND, wswan_sound_device)

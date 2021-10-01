@@ -79,6 +79,7 @@ private:
 	sound_stream *m_stream;
 	devcb_write_line m_irq_handler;
 	devcb_read8 m_mem_read_cb;
+	VGMDeviceLog* m_vgm_log;
 
 	void calculate_rates();
 	void create_syncs(unsigned long sps);

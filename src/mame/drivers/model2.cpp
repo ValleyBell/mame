@@ -2451,6 +2451,8 @@ void model2_state::model2snd_ctrl(u16 data)
 
 void model2_state::model2_snd(address_map &map)
 {
+	//map(0x000000, 0x07ffff).rw(m_scsp, FUNC(scsp_device::mem_read), FUNC(scsp_device::mem_write)).share("soundram");	// seems to always crash
+	//from nmk16.cpp: map(0x088000, 0x0887ff).ram().w(m_palette, FUNC(palette_device::write16)).share("palette");
 	map(0x000000, 0x07ffff).ram().share("soundram");
 	map(0x100000, 0x100fff).rw(m_scsp, FUNC(scsp_device::read), FUNC(scsp_device::write));
 	map(0x400000, 0x400001).w(FUNC(model2_state::model2snd_ctrl));

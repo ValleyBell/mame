@@ -53,6 +53,7 @@
 *********************************************************/
 
 #include "emu.h"
+#include "vgmwrite.hpp"
 #include "k053260.h"
 
 #include <algorithm>
@@ -98,6 +99,7 @@ k053260_device::k053260_device(const machine_config &mconfig, const char *tag, d
 	, m_sh2_cb(*this)
 	, m_stream(nullptr)
 	, m_timer(nullptr)
+	, m_vgm_log(VGMLogger::GetDummyChip())
 	, m_keyon(0)
 	, m_mode(0)
 	, m_voice{ { *this }, { *this }, { *this }, { *this } }
@@ -116,6 +118,12 @@ void k053260_device::device_start()
 	m_sh2_cb.resolve_safe();
 
 	m_stream = stream_alloc( 0, 2, clock() / CLOCKS_PER_SAMPLE );
+
+	m_vgm_log = machine().vgm_logger().OpenDevice(VGMC_K053260, clock());
+	if (memregion(DEVICE_SELF) != nullptr)
+		m_vgm_log->DumpSampleROM(0x01, memregion(DEVICE_SELF));
+	else
+		m_vgm_log->DumpSampleROM(0x01, space());
 
 	/* register with the save state system */
 	save_item(NAME(m_portdata));
@@ -224,6 +232,7 @@ u8 k053260_device::read(offs_t offset)
 void k053260_device::write(offs_t offset, u8 data)
 {
 	offset &= 0x3f;
+	m_vgm_log->Write(0x00, offset, data);
 
 	m_stream->update();
 

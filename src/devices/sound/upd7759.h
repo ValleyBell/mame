@@ -76,6 +76,8 @@ protected:
 	// internal state
 	sound_stream *m_channel;                  /* stream channel for playback */
 
+	VGMDeviceLog* m_vgm_log;
+
 	/* chip configuration */
 	uint8_t       m_sample_offset_shift;        /* header sample address shift (access data > 0xffff) */
 
@@ -122,7 +124,7 @@ public:
 
 	upd7759_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock = STANDARD_CLOCK);
 
-	DECLARE_WRITE_LINE_MEMBER( md_w ) { m_md = state; }
+	DECLARE_WRITE_LINE_MEMBER( md_w );
 
 protected:
 	virtual void internal_start_w(int state) override;

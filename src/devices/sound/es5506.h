@@ -140,6 +140,8 @@ protected:
 	std::vector<s16> m_ulaw_lookup;
 	std::vector<u32> m_volume_lookup;
 
+	VGMDeviceLog* m_vgm_log;
+
 #if ES5506_MAKE_WAVS
 	std::vector<s32> m_scratch;
 	void *      m_wavraw;                 // raw waveform
