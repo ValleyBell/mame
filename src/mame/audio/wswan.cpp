@@ -17,6 +17,8 @@ The noise taps and behavior are the same as the Virtual Boy.
 #include "vgmwrite.hpp"
 #include "wswan.h"
 
+#define VGM_MEM_LOG_OPTIMIZATION	1
+
 
 // device type definition
 DEFINE_DEVICE_TYPE(WSWAN_SND, wswan_sound_device, "wswan_sound", "WonderSwan Custom Sound")
@@ -283,9 +285,9 @@ void wswan_sound_device::port_w(offs_t offset, u16 data, u16 mem_mask)
 
 	if (offset & (0x80 / 2))
 	{
-		u8 vgm_ofs = (offset * 2) & 0x7F;
+		u8 vgm_ofs = (offset << 1) & 0x7F;
 		if (ACCESSING_BITS_0_7)
-			m_vgm_log->Write(0x00, vgm_ofs | 1, (data >> 0) & 0xFF);
+			m_vgm_log->Write(0x00, vgm_ofs | 0, (data >> 0) & 0xFF);
 		if (ACCESSING_BITS_8_15)
 			m_vgm_log->Write(0x00, vgm_ofs | 1, (data >> 8) & 0xFF);
 	}
@@ -355,7 +357,17 @@ void wswan_sound_device::port_w(offs_t offset, u16 data, u16 mem_mask)
 			// Sample location
 			if (ACCESSING_BITS_8_15)
 			{
+				u16 old_addr = m_sample_address;
 				m_sample_address = (data & 0xff00) >> 2;
+				if (m_sample_address != old_addr)
+				{
+#if VGM_MEM_LOG_OPTIMIZATION
+					// Since we didn't log those RAM writes before,
+					// we need to log the memory we are going to access to VGM now.
+					for (u16 addr = m_sample_address; addr < m_sample_address + 0x40; addr += 2)
+						vram_w(addr >> 1, read_word(addr), ~1);
+#endif
+				}
 			}
 			break;
 
@@ -396,4 +408,20 @@ void wswan_sound_device::port_w(offs_t offset, u16 data, u16 mem_mask)
 				m_system_volume = data & 0x03;
 			break;
 	}
+}
+
+void wswan_sound_device::vram_w(offs_t offset, u16 data, u16 mem_mask)
+{
+	u16 vgm_ofs = offset << 1;
+	if (vgm_ofs >= 0x4000)
+		return;	// skip RAM that is inaccessable anyway
+#if VGM_MEM_LOG_OPTIMIZATION
+	if (vgm_ofs < m_sample_address || vgm_ofs >= m_sample_address + 0x40)
+		return;	// optimization: don't log RAM writes we don't use for sample data
+#endif
+
+	if (ACCESSING_BITS_0_7)
+		m_vgm_log->Write(0x01, vgm_ofs | 0, (data >> 0) & 0xFF);
+	if (ACCESSING_BITS_8_15)
+		m_vgm_log->Write(0x01, vgm_ofs | 1, (data >> 8) & 0xFF);
 }

@@ -553,8 +553,6 @@ VGMDeviceLog* VGMLogger::OpenDevice(uint8_t chipType, int clock)
 			return &dummyDevice;	// logging needs to be reworked for this one
 		else if (chipType == VGMC_SCSP)
 			return &dummyDevice;	// timing is horribly off (see Fighting Vipers)
-		else if (chipType == VGMC_WSWAN)
-			return &dummyDevice;	// WonderSwan emulation is horrible in general - even the logs are screwed
 	}
 	
 	VGM_INF* vfPtr = nullptr;
@@ -1671,9 +1669,10 @@ void VGMDeviceLog::Write(uint8_t port, uint16_t r, uint8_t v)
 			wrtCmd.CmdLen = 0x03;
 			break;
 		case 0x01:
+			r |= (_chipType & 0x80) << 8;
 			wrtCmd.Data[0x00] = 0xC6;				// Write Memory
-			wrtCmd.Data[0x01] = (r >> 0) & 0xFF;	// offset low
-			wrtCmd.Data[0x02] = (r >> 8) & 0xFF;	// offset high
+			wrtCmd.Data[0x01] = (r >> 8) & 0xFF;	// offset high
+			wrtCmd.Data[0x02] = (r >> 0) & 0xFF;	// offset low
 			wrtCmd.Data[0x03] = v;					// Data
 			wrtCmd.CmdLen = 0x04;
 			break;
@@ -1817,11 +1816,11 @@ void VGMDeviceLog::Write(uint8_t port, uint16_t r, uint8_t v)
 	return;
 }
 
-void VGMDeviceLog::WriteLargeData(uint8_t type, uint32_t datasize, uint32_t value1, uint32_t value2, const void* data)
+void VGMDeviceLog::WriteLargeData(uint8_t type, uint32_t blockSize, uint32_t startOfs, uint32_t dataLen, const void* data)
 {
-	// datasize - ROM/RAM size
-	// value1 - Start Address
-	// value2 - Bytes to Write (0 -> write from Start Address to end of ROM/RAM)
+	// blockSize - ROM/RAM size
+	// startOfs - Start Address
+	// dataLen - Bytes to Write (0 -> write from Start Address to end of ROM/RAM)
 	
 	if (_vgmlog == nullptr || ! _vgmlog->_logging)
 		return;
@@ -1943,8 +1942,19 @@ void VGMDeviceLog::WriteLargeData(uint8_t type, uint32_t datasize, uint32_t valu
 		case 0x00:
 			break;
 		case 0x01:	// RAM Data
-			if (_vgmlog->NES_RAMCheck(vf, datasize, &value1, &value2, (uint8_t*)data))
-				blkType = 0xC2;
+			blkType = 0xC2;
+			{
+				uint8_t ret = _vgmlog->NES_RAMCheck(vf, blockSize, &startOfs, &dataLen,
+								static_cast<const uint8_t*>(data));
+				if (! ret)
+					return;
+				if (ret == 0x02)
+				{
+					data = static_cast<const uint8_t*>(data) - startOfs + 0xC000;
+					startOfs = 0xC000;
+					dataLen = 0x4000;
+				}
+			}
 			break;
 		}
 		break;
@@ -2108,7 +2118,7 @@ void VGMDeviceLog::WriteLargeData(uint8_t type, uint32_t datasize, uint32_t valu
 		return;
 	
 	if (data == nullptr)
-		print_info("ROM Data %02X: (0x%X bytes) is NULL!\n", blkType, datasize);
+		print_info("ROM Data %02X: (0x%X bytes) is NULL!\n", blkType, blockSize);
 	
 	_vgmlog->WriteDelay(vf);
 	
@@ -2124,7 +2134,7 @@ void VGMDeviceLog::WriteLargeData(uint8_t type, uint32_t datasize, uint32_t valu
 				
 				vrd.Type = blkType;
 				vrd.dstart_msb = dstart_msb;
-				vrd.DataSize = datasize | ((_chipType & 0x80) << 24);
+				vrd.DataSize = blockSize | ((_chipType & 0x80) << 24);
 				vrd.Data = data;
 			}
 			break;
@@ -2142,71 +2152,71 @@ void VGMDeviceLog::WriteLargeData(uint8_t type, uint32_t datasize, uint32_t valu
 	switch(blkType & 0xC0)
 	{
 	case 0x00:	// Normal Data Block
-		if (! value2)
-			value2 = datasize - value1;
+		if (! dataLen)
+			dataLen = blockSize - startOfs;
 		if (data == nullptr)
 		{
-			value1 = 0x00;
-			value2 = 0x00;
+			startOfs = 0x00;
+			dataLen = 0x00;
 		}
-		finalSize = value2;
+		finalSize = dataLen;
 		finalSize |= (_chipType & 0x80) << 24;
 		
 		fwrite(&finalSize, 0x04, 0x01, vf.hFile);	// Data Block Size
-		fwrite(data, 0x01, value2, vf.hFile);
+		fwrite(data, 0x01, dataLen, vf.hFile);
 		vf.BytesWrt += 0x07 + (finalSize & 0x7FFFFFFF);
 		break;
 	case 0x80:	// ROM Image
 		// Value 1 & 2 are used to write parts of the image (and save space)
-		if (! value2)
-			value2 = datasize - value1;
+		if (! dataLen)
+			dataLen = blockSize - startOfs;
 		if (data == nullptr)
 		{
-			value1 = 0x00;
-			value2 = 0x00;
+			startOfs = 0x00;
+			dataLen = 0x00;
 		}
-		finalSize = 0x08 + value2;
+		finalSize = 0x08 + dataLen;
 		finalSize |= (_chipType & 0x80) << 24;
-		value1 |= (dstart_msb << 24);
+		startOfs |= (dstart_msb << 24);
 		
 		fwrite(&finalSize, 0x04, 0x01, vf.hFile);	// Data Block Size
-		fwrite(&datasize, 0x04, 0x01, vf.hFile);	// ROM Size
-		fwrite(&value1, 0x04, 0x01, vf.hFile);		// Data Base Address
+		fwrite(&blockSize, 0x04, 0x01, vf.hFile);	// ROM Size
+		fwrite(&startOfs, 0x04, 0x01, vf.hFile);	// Data Base Address
 		{
-			size_t wrtByt = fwrite(data, 0x01, value2, vf.hFile);
-			if (wrtByt != value2)
-				print_info("Warning VGM WriteLargeData: wrote only 0x%X bytes instead of 0x%X!\n", (uint32_t)wrtByt, value2);
+			size_t wrtByt = fwrite(data, 0x01, dataLen, vf.hFile);
+			if (wrtByt != dataLen)
+				print_info("Warning VGM WriteLargeData: wrote only 0x%X bytes instead of 0x%X!\n", (uint32_t)wrtByt, dataLen);
 			//else
 			//	print_info("Wrote 0x%X bytes, new file ofs: 0x%X\n", (uint32_t)wrtByt, ftell(vf.hFile));
 		}
 		vf.BytesWrt += 0x07 + (finalSize & 0x7FFFFFFF);
 		break;
 	case 0xC0:	// RAM Writes
-		if (! value2)
-			value2 = datasize - value1;
+		if (! dataLen)
+			dataLen = blockSize - startOfs;
 		if (data == nullptr)
 		{
-			value1 = 0x00;
-			value2 = 0x00;
+			startOfs = 0x00;
+			dataLen = 0x00;
 		}
 		
 		if (! (blkType & 0x20))
 		{
-			finalSize = 0x02 + value2;
+			finalSize = 0x02 + dataLen;
 			finalSize |= (_chipType & 0x80) << 24;
 			
 			fwrite(&finalSize, 0x04, 0x01, vf.hFile);	// Data Block Size
-			fwrite(&value1, 0x02, 0x01, vf.hFile);		// Data Address
+			fwrite(&startOfs, 0x02, 0x01, vf.hFile);	// Data Address
 		}
 		else
 		{
-			finalSize = 0x04 + value2;
+			finalSize = 0x04 + dataLen;
 			finalSize |= (_chipType & 0x80) << 24;
 			
 			fwrite(&finalSize, 0x04, 0x01, vf.hFile);	// Data Block Size
-			fwrite(&value1, 0x04, 0x01, vf.hFile);		// Data Address
+			fwrite(&startOfs, 0x04, 0x01, vf.hFile);	// Data Address
 		}
-		fwrite(data, 0x01, value2, vf.hFile);
+		fwrite(data, 0x01, dataLen, vf.hFile);
 		vf.BytesWrt += 0x07 + (finalSize & 0x7FFFFFFF);
 		break;
 	}
@@ -2214,40 +2224,34 @@ void VGMDeviceLog::WriteLargeData(uint8_t type, uint32_t datasize, uint32_t valu
 	return;
 }
 
-uint8_t VGMLogger::NES_RAMCheck(VGM_INF& vf, uint32_t datasize, uint32_t* value1, uint32_t* value2, const uint8_t* data)
+uint8_t VGMLogger::NES_RAMCheck(VGM_INF& vf, uint32_t blockSize, uint32_t* startOfs, uint32_t* dataLen, const uint8_t* data)
 {
-	uint16_t CurPos;
-	uint16_t DataStart;
-	uint16_t DataEnd;
+	if (*startOfs < 0xC000)
+		return 0xFF;	// unable to handle this
+	
+	uint32_t sOfs = *startOfs - 0xC000;
+	uint32_t dLen = *dataLen;
 	
 	if (vf.NesMemEmpty)
 	{
 		vf.NesMemEmpty = 0x00;
-		memcpy(vf.NesMem, data, 0x4000);
-		
-		*value1 = 0xC000;
-		*value2 = 0x4000;
-		return 0x02;
+		memcpy(vf.NesMem, data - sOfs, 0x4000);	// cache memory from 0xC000..0xFFFF
+		return 0x02;	// need full dump of the NES ROM section
 	}
 	
-	DataStart = *value1 & 0x3FFF;
-	if (! *value2)
-		DataEnd = 0x4000;
-	else
-		DataEnd = DataStart + *value2;
-	if (DataEnd > 0x4000)
-		DataEnd = 0x4000;
-	
-	for (CurPos = DataStart; CurPos < DataEnd; CurPos ++)
+	if (! dLen)
+		dLen = 0x4000 - sOfs;
+	if (! memcmp(&vf.NesMem[sOfs], data, dLen))	// compare against cache
 	{
-		if (vf.NesMem[CurPos] != data[CurPos])
-		{
-			memcpy(vf.NesMem + DataStart, data + DataStart, DataEnd - DataStart);
-			return 0x01;
-		}
+		// cache match - discard write
+		return 0x00;
 	}
-	
-	return 0x00;
+	else
+	{
+		// cache mismatch - refresh cache and accept write
+		memcpy(&vf.NesMem[sOfs], data, dLen);
+		return 0x01;
+	}
 }
 
 VGMDeviceLog* VGMLogger::GetChip(uint8_t chipType, uint8_t instance)
@@ -2421,9 +2425,18 @@ void VGMDeviceLog::DumpSampleROM(uint8_t type, address_space& space)
 	}
 	
 	uint32_t dataSize = space.addrmask() + 1;
-	const void* dataPtr = space.get_read_ptr(0);
-	print_info("VGM - Dumping Device-Space %s: size 0x%X, space-ptr %p\n", space.name(), dataSize, dataPtr);
-	WriteLargeData(type, dataSize, 0x00, 0x00, dataPtr);
+	const uint8_t* dataPtrA = static_cast<const uint8_t*>(space.get_read_ptr(0));
+	const uint8_t* dataPtrB = static_cast<const uint8_t*>(space.get_read_ptr(space.addrmask()));
+	if ((dataPtrB - dataPtrA) == space.addrmask())
+	{
+		print_info("VGM - Dumping Device-Space %s: size 0x%X, space-ptr %p\n", space.name(), dataSize, dataPtrA);
+		WriteLargeData(type, dataSize, 0x00, 0x00, dataPtrA);
+	}
+	else
+	{
+		print_info("VGM - Device-Space %s: size 0x%X, dumping empty block due to non-continuous memory\n", space.name(), dataSize);
+		WriteLargeData(type, dataSize, 0x00, 0x00, nullptr);
+	}
 	
 	return;
 }

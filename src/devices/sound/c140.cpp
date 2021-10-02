@@ -154,10 +154,8 @@ void c140_device::device_start()
 	m_vgm_log = machine().vgm_logger().OpenDevice(VGMC_C140, vgmclk);
 	if (type() == C219)
 		m_vgm_log->SetProperty(0x01, 0x02);
-	else //if (m_banking_type == C140_TYPE::SYSTEM2)
-		m_vgm_log->SetProperty(0x01, 0x00);
-	//else if (m_banking_type == C140_TYPE::SYSTEM21)
-	//	m_vgm_log->SetProperty(0x01, 0x01);
+	else
+		m_vgm_log->SetProperty(0x01, 0x03);
 	if (memregion(DEVICE_SELF))
 	{
 		m_vgm_log->DumpSampleROM(0x01, memregion(DEVICE_SELF));
@@ -166,7 +164,7 @@ void c140_device::device_start()
 	{
 		logerror("VGM Warning: C140 wants to use dynamic memory (i.e. RAM)!\n");
 		// just dumping the whole space crashes
-		//m_vgm_log->DumpSampleROM(0x01, space());
+		m_vgm_log->DumpSampleROM(0x01, space());
 	}
 
 	save_item(NAME(m_REG));

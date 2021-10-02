@@ -413,7 +413,7 @@ s8 nesapu_device::apu_noise(apu_t::noise_t *chan)
 }
 
 /* RESET DPCM PARAMETERS */
-static inline void apu_dpcmreset(apu_t::dpcm_t *chan, VGMDeviceLog* vgmLog)
+static inline void apu_dpcmreset(apu_t::dpcm_t *chan, VGMDeviceLog* vgmLog, nesapu_device::get_mem_func mem_get)
 {
 	chan->address = 0xC000 + u16(chan->regs[2] << 6);
 	chan->length = u16(chan->regs[3] << 4) + 1;
@@ -421,8 +421,7 @@ static inline void apu_dpcmreset(apu_t::dpcm_t *chan, VGMDeviceLog* vgmLog)
 	chan->irq_occurred = false;
 	chan->enabled = true; /* Fixed * Proper DPCM channel ENABLE/DISABLE flag behaviour*/
 	chan->vol = 0; /* Fixed * DPCM DAC resets itself when restarted */
-	// I have no idea how to do this at all since DPCM reads are done using a callback function. [TODO]
-	//vgmLog->WriteLargeData(0x01, 0x10000, chan->address, chan->length, chan->memory->get_read_ptr(0xC000));
+	vgmLog->WriteLargeData(0x01, 0x10000, chan->address, chan->length, mem_get(chan->address));
 }
 
 /* OUTPUT DPCM WAVE SAMPLE (VALUES FROM -64 to +63) */
@@ -451,7 +450,7 @@ s8 nesapu_device::apu_dpcm(apu_t::dpcm_t *chan)
 				chan->enabled = false; /* Fixed * Proper DPCM channel ENABLE/DISABLE flag behaviour*/
 				chan->vol=0; /* Fixed * DPCM DAC resets itself when restarted */
 				if (chan->regs[0] & 0x40)
-					apu_dpcmreset(chan, m_vgm_log);
+					apu_dpcmreset(chan, m_vgm_log, m_mem_get_cb);
 				else
 				{
 					if (chan->regs[0] & 0x80) /* IRQ Generator */
@@ -620,7 +619,7 @@ inline void nesapu_device::apu_regwrite(int address, u8 value)
 
 	case apu_t::WRE2:
 		m_APU.dpcm.regs[2] = value;
-		//apu_dpcmreset(&m_APU.dpcm, m_vgm_log);
+		//apu_dpcmreset(&m_APU.dpcm, m_vgm_log, m_mem_get_cb);
 		break;
 
 	case apu_t::WRE3:
@@ -676,7 +675,7 @@ inline void nesapu_device::apu_regwrite(int address, u8 value)
 			if (false == m_APU.dpcm.enabled)
 			{
 				m_APU.dpcm.enabled = true;
-				apu_dpcmreset(&m_APU.dpcm, m_vgm_log);
+				apu_dpcmreset(&m_APU.dpcm, m_vgm_log, m_mem_get_cb);
 			}
 		}
 		else

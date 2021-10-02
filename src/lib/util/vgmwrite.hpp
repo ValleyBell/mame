@@ -35,7 +35,7 @@ public:
 	VGMDeviceLog();
 	bool IsValid(void) const;
 	void Write(uint8_t port, uint16_t r, uint8_t v);
-	void WriteLargeData(uint8_t type, uint32_t datasize, uint32_t value1, uint32_t value2, const void* data);
+	void WriteLargeData(uint8_t type, uint32_t blockSize, uint32_t startOfs, uint32_t dataLen, const void* data);
 	void SetProperty(uint8_t attr, uint32_t data);
 	void DumpSampleROM(uint8_t type, memory_region* region);
 	void DumpSampleROM(uint8_t type, address_space& space);

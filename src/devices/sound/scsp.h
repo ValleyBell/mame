@@ -34,7 +34,6 @@ public:
 	u16 read(offs_t offset);
 	void write(offs_t offset, u16 data, u16 mem_mask = ~0);
 
-	u16 mem_read(offs_t offset);
 	void mem_write(offs_t offset, u16 data, u16 mem_mask = ~0);
 
 	// MIDI I/O access (used for comms on Model 2/3)

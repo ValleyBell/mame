@@ -1463,30 +1463,12 @@ void scsp_device::write(offs_t offset, u16 data, u16 mem_mask)
 	w16(offset * 2, tmp);
 }
 
-u16 scsp_device::mem_read(offs_t offset)
-{
-	uint16_t* ScspRam = reinterpret_cast<uint16_t*>(memregion(tag())->base());
-
-	//logerror("Trying to read RAM Offset %06X, Mem Mask %04X\n", offset, mem_mask);
-	offset &= 0x3FFFF;
-	//return ScspRam[offset] & mem_mask;
-	return ScspRam[offset];
-}
-
 #define ADDR_HIGH(x)	(((x) >> 16) & 0x07)
 #define ADDR_LOW(x)		((x) & 0xFFFF)
 void scsp_device::mem_write(offs_t offset, u16 data, u16 mem_mask)
 {
-	uint16_t* ScspRam = reinterpret_cast<uint16_t*>(memregion(tag())->base());
-	uint16_t tmp;
-	
-	offset &= 0x3FFFF;
-	tmp = ScspRam[offset];
-	COMBINE_DATA(&tmp);
-	ScspRam[offset] = tmp;
-	
 	offset <<= 1;
-	if (offset < 0x08000)	// don't log the RAM areas used by the audio cpu
+	if (offset < 0x08000)	// don't log the RAM areas used sound driver work RAM
 		return;
 	if (ACCESSING_BITS_8_15)
 		m_vgm_log->Write(0x80 | ADDR_HIGH(offset), ADDR_LOW(offset) | 0x00, (data & 0xFF00) >> 8);
