@@ -55,6 +55,9 @@ public:
 	u8 read(offs_t offset);
 	void write(offs_t offset, u8 data);
 
+	typedef std::function<void*(offs_t)> get_mem_func;
+	void set_getmem_callback(get_mem_func func) { m_mem_get_cb = func; }
+
 protected:
 	nesapu_device(const machine_config &mconfig, device_type type, const char *tag, device_t *owner, u32 clock);
 
@@ -84,6 +87,8 @@ private:
 	sound_stream *m_stream;
 	devcb_write_line m_irq_handler;
 	devcb_read8 m_mem_read_cb;
+	get_mem_func m_mem_get_cb;
+	VGMDeviceLog* m_vgm_log;
 
 	void calculate_rates();
 	void apu_square(apu_t::square_t *chan);

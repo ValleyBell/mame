@@ -124,6 +124,7 @@ private:
 	// MAME resources
 	sound_stream *m_stream;
 	required_region_ptr<uint16_t> m_dsp_rom;
+	VGMDeviceLog* m_vgm_log;
 
 	uint16_t m_data_latch;
 	int16_t m_out[2];

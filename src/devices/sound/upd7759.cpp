@@ -123,6 +123,7 @@
 *************************************************************/
 
 #include "emu.h"
+#include "vgmwrite.hpp"
 #include "upd7759.h"
 
 
@@ -152,6 +153,7 @@ upd775x_device::upd775x_device(const machine_config &mconfig, device_type type, 
 	, device_sound_interface(mconfig, *this)
 	, device_rom_interface(mconfig, *this)
 	, m_channel(nullptr)
+	, m_vgm_log(VGMLogger::GetDummyChip())
 	, m_sample_offset_shift(0)
 	, m_pos(0)
 	, m_step(0)
@@ -221,6 +223,11 @@ void upd775x_device::device_start()
 
 	m_clock_period = clock() ? attotime::from_hz(clock()) : attotime::zero;
 
+	m_vgm_log = machine().vgm_logger().OpenDevice(VGMC_UPD7759, clock());
+	m_vgm_log->SetProperty(0x01, m_sample_offset_shift);	// set uPD7759/56 mode
+	m_vgm_log->SetProperty(0x00, m_md ? 0x00 : 0x01);	// write master/slave mode
+	m_vgm_log->DumpSampleROM(0x01, memregion(DEVICE_SELF));
+
 	save_item(NAME(m_pos));
 	save_item(NAME(m_step));
 
@@ -267,6 +274,7 @@ void upd7759_device::device_start()
 	upd775x_device::device_start();
 
 	m_sample_offset_shift = 1;
+	m_vgm_log->SetProperty(0x01, m_sample_offset_shift);	// set uPD7759 mode
 
 	m_timer = timer_alloc(TID_SLAVE_UPDATE);
 
@@ -642,6 +650,8 @@ void upd775x_device::internal_reset_w(int state)
 
 	m_channel->update();
 
+	m_vgm_log->Write(0x00, 0x00, state);
+
 	if (oldreset && !m_reset)
 		device_reset();
 }
@@ -676,6 +686,8 @@ void upd7759_device::internal_start_w(int state)
 
 	m_channel->update();
 
+	m_vgm_log->Write(0x00, 0x01, state);
+
 	if (m_state == STATE_IDLE && m_mode == MODE_STAND_ALONE && oldstart && !m_start && m_reset)
 	{
 		m_state = STATE_START;
@@ -694,6 +706,8 @@ void upd7756_device::internal_start_w(int state)
 	LOG_STATE("upd7759_start_w: %d->%d\n", oldstart, m_start);
 
 	m_channel->update();
+
+	m_vgm_log->Write(0x00, 0x01, state);
 
 	if (m_state == STATE_IDLE && oldstart && !m_start && m_reset)
 	{
@@ -723,6 +737,8 @@ void upd7759_device::internal_md_w(int state)
 
 	m_channel->update();
 
+	m_vgm_log->SetProperty(0x00, m_md ? 0x00 : 0x01);	// write master/slave mode
+
 	if (m_state == STATE_IDLE && m_reset)
 	{
 		if (old_md && !m_md)
@@ -741,6 +757,8 @@ void upd7759_device::internal_md_w(int state)
 
 void upd775x_device::port_w(u8 data)
 {
+	m_vgm_log->Write(0x00, 0x02, data);
+	
 	synchronize(TID_PORT_WRITE, data);
 }
 

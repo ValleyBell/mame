@@ -90,12 +90,18 @@ uint8_t n2a03_device::apu_read_mem(offs_t offset)
 	return mintf->program.read_byte(offset);
 }
 
+void* n2a03_device::apu_mem_ptr(offs_t offset)
+{
+	return space(AS_PROGRAM).get_read_ptr(offset);
+}
+
 void n2a03_device::device_add_mconfig(machine_config &config)
 {
 	NES_APU(config, m_apu, DERIVED_CLOCK(1,1));
 	m_apu->irq().set(FUNC(n2a03_device::apu_irq));
 	m_apu->mem_read().set(FUNC(n2a03_device::apu_read_mem));
 	m_apu->add_route(ALL_OUTPUTS, *this, 1.0, AUTO_ALLOC_INPUT, 0);
+	m_apu->set_getmem_callback(std::bind(&n2a03_device::apu_mem_ptr, this, std::placeholders::_1));
 }
 
 
