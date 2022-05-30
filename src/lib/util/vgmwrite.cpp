@@ -34,6 +34,7 @@ static size_t utf16len(const VGMLogger::gd3char_t* str);
 
 
 static VGMDeviceLog dummyDevice;
+static bool dumpEmptyBlocks = true;
 
 static size_t str2utf16(VGMLogger::gd3char_t* dststr, const char* srcstr, size_t max)
 {
@@ -107,6 +108,23 @@ static size_t utf16len(const VGMLogger::gd3char_t* str)
 	while(*end_ptr != 0)
 		end_ptr ++;
 	return end_ptr - str;
+}
+
+static void DumpEmptyData(FILE* hFile, size_t dataLen, uint8_t fill)
+{
+	constexpr size_t BLOCK_SIZE = 4096;
+	uint8_t buffer[BLOCK_SIZE];
+	size_t remBytes = dataLen;
+	memset(buffer, fill, BLOCK_SIZE);
+	while(remBytes > 0)
+	{
+		size_t wrtBytes = (BLOCK_SIZE <= remBytes) ? BLOCK_SIZE : remBytes;
+		size_t ret = fwrite(buffer, 0x01, wrtBytes, hFile);
+		if (ret < wrtBytes)
+			break;
+		remBytes -= ret;
+	}
+	return;
 }
 
 VGMDeviceLog::VGMDeviceLog()
@@ -464,7 +482,7 @@ void VGMLogger::Header_PostWrite(VGM_INF& vf)
 	{
 		VGM_ROM_DATA& vrd = vf.DataBlk[curcmd];
 		blkSize = 0x08;
-		if (vrd.Data != nullptr)
+		if (vrd.Data != nullptr || dumpEmptyBlocks)
 			blkSize += vrd.DataSize;
 		vrd.DataSize &= 0x7FFFFFFF;
 		
@@ -476,7 +494,9 @@ void VGMLogger::Header_PostWrite(VGM_INF& vf)
 		templng = 0x00;
 		templng |= (vrd.dstart_msb << 24);
 		fwrite(&templng, 0x04, 0x01, vf.hFile);		// Data Base Address
-		if (vrd.Data != nullptr)
+		if (vrd.Data == nullptr && dumpEmptyBlocks)
+			DumpEmptyData(vf.hFile, vrd.DataSize, 0x00);
+		else if (vrd.Data != nullptr)
 		{
 			size_t wrtByt = fwrite(vrd.Data, 0x01, vrd.DataSize, vf.hFile);
 			if (wrtByt != vrd.DataSize)
@@ -2163,14 +2183,17 @@ void VGMDeviceLog::WriteLargeData(uint8_t type, uint32_t blockSize, uint32_t sta
 		finalSize |= (_chipType & 0x80) << 24;
 		
 		fwrite(&finalSize, 0x04, 0x01, vf.hFile);	// Data Block Size
-		fwrite(data, 0x01, dataLen, vf.hFile);
+		if (data == nullptr && dumpEmptyBlocks)
+			DumpEmptyData(vf.hFile, dataLen, 0x00);
+		else
+			fwrite(data, 0x01, dataLen, vf.hFile);
 		vf.BytesWrt += 0x07 + (finalSize & 0x7FFFFFFF);
 		break;
 	case 0x80:	// ROM Image
 		// Value 1 & 2 are used to write parts of the image (and save space)
 		if (! dataLen)
 			dataLen = blockSize - startOfs;
-		if (data == nullptr)
+		if (data == nullptr && !dumpEmptyBlocks)
 		{
 			startOfs = 0x00;
 			dataLen = 0x00;
@@ -2182,6 +2205,11 @@ void VGMDeviceLog::WriteLargeData(uint8_t type, uint32_t blockSize, uint32_t sta
 		fwrite(&finalSize, 0x04, 0x01, vf.hFile);	// Data Block Size
 		fwrite(&blockSize, 0x04, 0x01, vf.hFile);	// ROM Size
 		fwrite(&startOfs, 0x04, 0x01, vf.hFile);	// Data Base Address
+		if (data == nullptr && dumpEmptyBlocks)
+		{
+			DumpEmptyData(vf.hFile, dataLen, 0x00);
+		}
+		else
 		{
 			size_t wrtByt = fwrite(data, 0x01, dataLen, vf.hFile);
 			if (wrtByt != dataLen)
@@ -2194,7 +2222,7 @@ void VGMDeviceLog::WriteLargeData(uint8_t type, uint32_t blockSize, uint32_t sta
 	case 0xC0:	// RAM Writes
 		if (! dataLen)
 			dataLen = blockSize - startOfs;
-		if (data == nullptr)
+		if (data == nullptr && !dumpEmptyBlocks)
 		{
 			startOfs = 0x00;
 			dataLen = 0x00;
@@ -2216,7 +2244,10 @@ void VGMDeviceLog::WriteLargeData(uint8_t type, uint32_t blockSize, uint32_t sta
 			fwrite(&finalSize, 0x04, 0x01, vf.hFile);	// Data Block Size
 			fwrite(&startOfs, 0x04, 0x01, vf.hFile);	// Data Address
 		}
-		fwrite(data, 0x01, dataLen, vf.hFile);
+		if (data == nullptr && dumpEmptyBlocks)
+			DumpEmptyData(vf.hFile, dataLen, 0x00);
+		else
+			fwrite(data, 0x01, dataLen, vf.hFile);
 		vf.BytesWrt += 0x07 + (finalSize & 0x7FFFFFFF);
 		break;
 	}
