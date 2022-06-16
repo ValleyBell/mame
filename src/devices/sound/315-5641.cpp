@@ -9,13 +9,18 @@
 DEFINE_DEVICE_TYPE(SEGA_315_5641_PCM, sega_315_5641_pcm_device, "315_5641_pcm", "Sega 315-5641 PCM")
 
 sega_315_5641_pcm_device::sega_315_5641_pcm_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock)
-	: upd7759_device(mconfig, SEGA_315_5641_PCM, tag, owner, clock), m_fifo_read(0), m_fifo_write(0)
+	: upd7759_device(mconfig, SEGA_315_5641_PCM, tag, owner, clock)
+	, m_fifocallback(*this)
+	, m_fifo_read(0)
+	, m_fifo_write(0)
 {
 	m_md = 0;   // always runs in slave mode
 }
 
 void sega_315_5641_pcm_device::device_start()
 {
+	m_fifocallback.resolve_safe();
+
 	upd7759_device::device_start();
 
 	save_item(NAME(m_fifo_data), 0x40);
@@ -37,6 +42,11 @@ void sega_315_5641_pcm_device::advance_state()
 				m_fifo_in = m_fifo_data[fiforead];
 				m_fifo_read = fiforead;
 				m_vgm_log->Write(0x00, 0x02, m_fifo_in);
+				if (get_fifo_space() == 0x3F)
+				{
+					m_fifo_empty = true;
+					m_fifocallback(1);
+				}
 			}
 		}
 		break;
@@ -58,9 +68,28 @@ void sega_315_5641_pcm_device::port_w(u8 data)
 	{
 		m_fifo_data[m_fifo_write++] = data;
 		m_fifo_write &= 0x3F;
+		if (m_fifo_empty)
+		{
+			m_fifo_empty = false;
+			m_fifocallback(0);
+		}
 	}
 }
 
+
+void sega_315_5641_pcm_device::fifo_reset_w(u8 data)
+{
+	bool reset = !!(data & 1);
+	if (!m_fifo_reset && reset)
+	{
+		m_fifo_read = 0x3F;
+		m_fifo_write = 0x00;
+		if (m_fifo_empty)
+			m_fifocallback(0);
+		m_fifo_empty = false;
+	}
+	m_fifo_reset = reset;
+}
 
 uint8_t sega_315_5641_pcm_device::get_fifo_space()
 {
@@ -73,4 +102,8 @@ void sega_315_5641_pcm_device::device_reset()
 
 	m_fifo_read          = 0x3F;
 	m_fifo_write         = 0x00;
+	m_fifo_reset         = false;
+	if (m_fifo_empty)
+		m_fifocallback(0);
+	m_fifo_empty         = false;
 }

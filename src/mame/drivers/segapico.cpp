@@ -319,6 +319,7 @@ void pico_base_state::pico_68k_io_write(offs_t offset, uint16_t data, uint16_t m
 				// value 8000 resets the FIFO? (always used with low reset line)
 				// value 0800 maps to the uPD7759's reset line (0 = reset, 1 = normal)
 				// value 4000 maps to the uPD7759's start line (0->1 = start)
+				m_sega_315_5641_pcm->fifo_reset_w(BIT(data, 15));
 				m_sega_315_5641_pcm->reset_w(BIT(data, 11));
 				m_sega_315_5641_pcm->start_w(BIT(data, 14));
 				if (BIT(data, 14))
@@ -409,7 +410,7 @@ void pico_state::pico(machine_config &config)
 	SOFTWARE_LIST(config, "cart_list").set_original("pico");
 
 	SEGA_315_5641_PCM(config, m_sega_315_5641_pcm, upd7759_device::STANDARD_CLOCK*2);
-	//m_sega_315_5641_pcm->drq().set(FUNC(pico_state::sound_cause_irq)); FIXME: this never worked - the MAME 315_5641 doesn't support slave mode
+	m_sega_315_5641_pcm->fifo_cb().set(FUNC(pico_state::sound_cause_irq));
 	m_sega_315_5641_pcm->add_route(ALL_OUTPUTS, "lspeaker", 0.16);
 	m_sega_315_5641_pcm->add_route(ALL_OUTPUTS, "rspeaker", 0.16);
 }
@@ -429,7 +430,7 @@ void pico_state::picopal(machine_config &config)
 	SOFTWARE_LIST(config, "cart_list").set_original("pico");
 
 	SEGA_315_5641_PCM(config, m_sega_315_5641_pcm, upd7759_device::STANDARD_CLOCK*2);
-	//m_sega_315_5641_pcm->drq().set(FUNC(pico_state::sound_cause_irq)); FIXME: this never worked - the MAME 315_5641 doesn't support slave mode
+	m_sega_315_5641_pcm->fifo_cb().set(FUNC(pico_state::sound_cause_irq));
 	m_sega_315_5641_pcm->add_route(ALL_OUTPUTS, "lspeaker", 0.16);
 	m_sega_315_5641_pcm->add_route(ALL_OUTPUTS, "rspeaker", 0.16);
 }
@@ -627,7 +628,7 @@ void copera_state::copera(machine_config &config)
 	SOFTWARE_LIST(config, "cart_list").set_original("copera");
 
 	SEGA_315_5641_PCM(config, m_sega_315_5641_pcm, upd7759_device::STANDARD_CLOCK);
-	//m_sega_315_5641_pcm->drq().set(FUNC(copera_state::sound_cause_irq)); FIXME: this never worked - the MAME 315_5641 doesn't support slave mode
+	m_sega_315_5641_pcm->fifo_cb().set(FUNC(copera_state::sound_cause_irq));
 	m_sega_315_5641_pcm->add_route(ALL_OUTPUTS, "lspeaker", 0.16);
 	m_sega_315_5641_pcm->add_route(ALL_OUTPUTS, "rspeaker", 0.16);
 }
