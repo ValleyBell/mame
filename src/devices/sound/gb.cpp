@@ -149,6 +149,8 @@ void gameboy_sound_device::device_start()
 	m_timer->adjust(clocks_to_attotime(FRAME_CYCLES/128), 0, clocks_to_attotime(FRAME_CYCLES/128));
 
 	m_vgm_log = machine().vgm_logger().OpenDevice(VGMC_GBSOUND, clock());
+	if (type() == CGB04_APU)
+		m_vgm_log->SetProperty(0x00, 0x01);	// set GameBoy Color flag
 
 	save_item(NAME(m_last_updated));
 	save_item(NAME(m_snd_regs));

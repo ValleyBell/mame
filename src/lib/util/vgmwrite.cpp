@@ -1154,6 +1154,12 @@ void VGMDeviceLog::SetProperty(uint8_t attr, uint32_t data)
 		}
 		break;
 	case VGMC_GBSOUND:
+		switch(attr)
+		{
+		case 0x00:	// GameBoy Color mode
+			vh.lngHzGBDMG = (vh.lngHzGBDMG & 0x7FFFFFFF) | (data << 31);
+			break;
+		}
 		break;
 	case VGMC_NESAPU:
 		switch(attr)
