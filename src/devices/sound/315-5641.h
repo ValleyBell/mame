@@ -26,6 +26,8 @@ public:
 
 protected:
 	// device-level overrides
+	virtual void internal_start_w(int state) override;
+
 	virtual void device_start() override;
 	virtual void device_reset() override;
 

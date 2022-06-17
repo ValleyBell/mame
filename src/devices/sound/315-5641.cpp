@@ -91,6 +91,25 @@ void sega_315_5641_pcm_device::fifo_reset_w(u8 data)
 	m_fifo_reset = reset;
 }
 
+void sega_315_5641_pcm_device::internal_start_w(int state)
+{
+	uint8_t oldstart = m_start;
+	uint8_t newstart = (state != 0);
+
+	if (!m_md && m_reset && !oldstart && newstart)
+	{
+		// Somewhere between "Reset Off" and the first sample data,
+		// we need to send a few commands to make the sample stream work.
+		// Doing that when rising the "start" line seems to work fine.
+		port_w(0xFF);   // "Last Sample" value (must be >= 0x10)
+		port_w(0x00);   // Dummy 1
+		port_w(0x00);   // Addr MSB
+		port_w(0x00);   // Addr LSB
+	}
+
+	upd7759_device::internal_start_w(state);
+}
+
 uint8_t sega_315_5641_pcm_device::get_fifo_space()
 {
 	return (m_fifo_read - m_fifo_write) & 0x3F;

@@ -322,16 +322,6 @@ void pico_base_state::pico_68k_io_write(offs_t offset, uint16_t data, uint16_t m
 				m_sega_315_5641_pcm->fifo_reset_w(BIT(data, 15));
 				m_sega_315_5641_pcm->reset_w(BIT(data, 11));
 				m_sega_315_5641_pcm->start_w(BIT(data, 14));
-				if (BIT(data, 14))
-				{
-					// Somewhere between "Reset Off" and the first sample data,
-					// we need to send a few commands to make the sample stream work.
-					// Doing that when rising the "start" line seems to work fine.
-					m_sega_315_5641_pcm->port_w(0xFF);    // "Last Sample" value (must be >= 0x10)
-					m_sega_315_5641_pcm->port_w(0x00);    // Dummy 1
-					m_sega_315_5641_pcm->port_w(0x00);    // Addr MSB
-					m_sega_315_5641_pcm->port_w(0x00);    // Addr LSB
-				}
 			}
 
 
