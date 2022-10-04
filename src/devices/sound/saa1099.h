@@ -65,6 +65,7 @@ private:
 	void envelope_w(int ch);
 
 	sound_stream *m_stream;         // our stream
+	VGMDeviceLog* m_vgm_log;
 	u8 m_noise_params[2];           // noise generators parameters
 	bool m_env_enable[2];           // envelope generators enable
 	bool m_env_reverse_right[2];    // envelope reversed for right channel

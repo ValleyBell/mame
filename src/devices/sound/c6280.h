@@ -47,6 +47,8 @@ private:
 	u8 m_lfo_control;
 	channel m_channel[8];
 	s16 m_volume_table[32];
+
+	VGMDeviceLog* m_vgm_log;
 };
 
 DECLARE_DEVICE_TYPE(C6280, c6280_device)

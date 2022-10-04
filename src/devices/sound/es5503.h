@@ -28,6 +28,8 @@ public:
 
 	uint8_t get_channel_strobe() { return m_channel_strobe; }
 
+	VGMDeviceLog* get_vgmlog_dev() const { return m_vgm_log; }	// for Apple IIgs
+
 protected:
 	// device-level overrides
 	virtual void device_start() override;
@@ -86,6 +88,8 @@ private:
 	emu_timer *m_timer;
 
 	std::vector<int32_t> m_mix_buffer;
+
+	VGMDeviceLog* m_vgm_log;
 
 	void halt_osc(int onum, int type, uint32_t *accumulator, int resshift);
 };

@@ -53,6 +53,7 @@ TODO:
 ***************************************************************************************/
 
 #include "emu.h"
+#include "vgmwrite.hpp"
 #include "gb.h"
 
 
@@ -87,6 +88,7 @@ DEFINE_DEVICE_TYPE(CGB04_APU, cgb04_apu_device, "cgb04_apu", "CGB04 APU")
 gameboy_sound_device::gameboy_sound_device(const machine_config &mconfig, device_type type, const char *tag, device_t *owner, uint32_t clock)
 	: device_t(mconfig, type, tag, owner, clock)
 	, device_sound_interface(mconfig, *this)
+	, m_vgm_log(VGMLogger::GetDummyChip())
 {
 }
 
@@ -145,6 +147,10 @@ void gameboy_sound_device::device_start()
 	m_channel = stream_alloc(0, 2, SAMPLE_RATE_OUTPUT_ADAPTIVE);
 	m_timer = timer_alloc(FUNC(gameboy_sound_device::timer_callback), this);
 	m_timer->adjust(clocks_to_attotime(FRAME_CYCLES/128), 0, clocks_to_attotime(FRAME_CYCLES/128));
+
+	m_vgm_log = machine().vgm_logger().OpenDevice(VGMC_GBSOUND, clock());
+	if (type() == CGB04_APU)
+		m_vgm_log->SetProperty(0x00, 0x01);	// set GameBoy Color flag
 
 	save_item(NAME(m_last_updated));
 	save_item(NAME(m_snd_regs));
@@ -627,6 +633,7 @@ void dmg_apu_device::wave_w(offs_t offset, u8 data)
 	m_channel->update();
 	update_state();
 
+	m_vgm_log->Write(0x00, AUD3W0 + offset, data);
 	if (m_snd_3.on)
 	{
 		if (m_snd_3.sample_reading)
@@ -646,6 +653,7 @@ void cgb04_apu_device::wave_w(offs_t offset, u8 data)
 	m_channel->update();
 	update_state();
 
+	m_vgm_log->Write(0x00, AUD3W0 + offset, data);
 	if (m_snd_3.on)
 	{
 		m_snd_regs[AUD3W0 + (m_snd_3.offset/2)] = data;
@@ -663,6 +671,7 @@ void dmg_apu_device::sound_w(offs_t offset, u8 data)
 	m_channel->update();
 	update_state();
 
+	m_vgm_log->Write(0x00, offset, data);
 	/* Only register NR52 is accessible if the sound controller is disabled */
 	if (!m_snd_control.on && offset != NR52 && offset != NR11 && offset != NR21 && offset != NR31 && offset != NR41)
 		return;
@@ -677,6 +686,7 @@ void cgb04_apu_device::sound_w(offs_t offset, u8 data)
 	m_channel->update();
 	update_state();
 
+	m_vgm_log->Write(0x00, offset, data);
 	/* Only register NR52 is accessible if the sound controller is disabled */
 	if (!m_snd_control.on && offset != NR52)
 		return;

@@ -327,13 +327,16 @@ private:
 	stream_buffer::sample_t m_vol_table[NUM_CHANNELS][16];
 	stream_buffer::sample_t m_env_table[NUM_CHANNELS][32];
 	std::unique_ptr<stream_buffer::sample_t[]> m_vol3d_table;
+protected:
 	int m_flags;          // Flags
 	int m_feature;        // Chip specific features
 	int m_res_load[3];    // Load on channel in ohms
+private:
 	devcb_read8 m_port_a_read_cb;
 	devcb_read8 m_port_b_read_cb;
 	devcb_write8 m_port_a_write_cb;
 	devcb_write8 m_port_b_write_cb;
+	VGMDeviceLog* m_vgm_log;
 };
 
 DECLARE_DEVICE_TYPE(AY8910, ay8910_device)

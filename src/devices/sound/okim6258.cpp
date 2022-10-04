@@ -12,6 +12,7 @@
 
 
 #include "emu.h"
+#include "vgmwrite.hpp"
 #include "okim6258.h"
 
 #define COMMAND_STOP        (1 << 0)
@@ -56,6 +57,7 @@ okim6258_device::okim6258_device(const machine_config &mconfig, const char *tag,
 		m_data_in(0),
 		m_nibble_shift(0),
 		m_stream(nullptr),
+		m_vgm_log(VGMLogger::GetDummyChip()),
 		m_output_bits(0),
 		m_signal(0),
 		m_step(0)
@@ -118,6 +120,11 @@ void okim6258_device::device_start()
 
 	m_signal = -2;
 	m_step = 0;
+
+	m_vgm_log = machine().vgm_logger().OpenDevice(VGMC_OKIM6258, clock());
+	m_vgm_log->SetProperty(0x01, m_start_divider);
+	m_vgm_log->SetProperty(0x02, m_adpcm_type);
+	m_vgm_log->SetProperty(0x03, (m_output_bits == OUTPUT_12BITS));
 
 	state_save_register();
 }
@@ -224,6 +231,7 @@ int16_t okim6258_device::clock_adpcm(uint8_t nibble)
 void okim6258_device::set_divider(int val)
 {
 	m_divider = dividers[val];
+	m_vgm_log->Write(0x00, 0x0C, val);
 	notify_clock_changed();
 }
 
@@ -236,6 +244,11 @@ void okim6258_device::set_divider(int val)
 
 void okim6258_device::device_clock_changed()
 {
+	m_vgm_log->Write(0x00, 0x08, (clock() >>  0) & 0xFF);
+	m_vgm_log->Write(0x00, 0x09, (clock() >>  8) & 0xFF);
+	m_vgm_log->Write(0x00, 0x0A, (clock() >> 16) & 0xFF);
+	m_vgm_log->Write(0x00, 0x0B, (clock() >> 24) & 0xFF);
+
 	m_stream->set_sample_rate(clock() / m_divider);
 }
 
@@ -276,6 +289,8 @@ void okim6258_device::data_w(uint8_t data)
 	/* update the stream */
 	m_stream->update();
 
+	m_vgm_log->Write(0x00, 0x01, data);
+
 	m_data_in = data;
 	m_nibble_shift = 0;
 }
@@ -290,6 +305,8 @@ void okim6258_device::data_w(uint8_t data)
 void okim6258_device::ctrl_w(uint8_t data)
 {
 	m_stream->update();
+
+	m_vgm_log->Write(0x00, 0x00, data);
 
 	if (data & COMMAND_STOP)
 	{

@@ -49,6 +49,7 @@ public:
 		, m_okibank(*this, "okibank")
 		, m_raizing_okibank{{*this, "raizing_okibank0_%u", 0U},
 							{*this, "raizing_okibank1_%u", 0U}}
+		, m_okibank_vgm_log{nullptr, nullptr}
 		, m_io_pad(*this, "PAD%u", 1U)
 		, m_eepromout(*this, "EEPROMOUT")
 	{ }
@@ -124,6 +125,7 @@ private:
 	optional_memory_bank m_audiobank;
 	optional_memory_bank m_okibank;
 	optional_memory_bank_array<8> m_raizing_okibank[2];
+	VGMDeviceLog* m_okibank_vgm_log[2];
 
 	optional_ioport_array<2> m_io_pad;
 	optional_ioport m_eepromout;

@@ -45,6 +45,7 @@ private:
 	devcb_write_line m_ready_handler;
 
 	sound_stream*   m_sound;
+	VGMDeviceLog*   m_vgm_log;
 
 	const int32_t     m_feedback_mask;    // mask for feedback
 	const int32_t     m_whitenoise_tap1;  // mask for white noise tap 1 (higher one, usually bit 14)

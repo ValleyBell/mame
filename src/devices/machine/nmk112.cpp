@@ -10,6 +10,8 @@
     to play a sample from a different bank at the same time. */
 
 #include "emu.h"
+#include "vgmwrite.hpp"
+#include "sound/okim6295.h"
 #include "nmk112.h"
 
 #define TABLESIZE   0x100
@@ -26,6 +28,8 @@ nmk112_device::nmk112_device(const machine_config &mconfig, const char *tag, dev
 	, m_rom1(*this, finder_base::DUMMY_TAG)
 	, m_size0(0)
 	, m_size1(0)
+	, m_vgm_log0(nullptr)
+	, m_vgm_log1(nullptr)
 {
 }
 
@@ -38,10 +42,28 @@ void nmk112_device::device_start()
 	save_item(NAME(m_current_bank));
 
 	if (m_rom0)
+	{
 		m_size0 = m_rom0.bytes() - 0x40000;
+		m_vgm_log0 = machine().device<okim6295_device>(m_rom0.finder_tag())->get_vgmlog_dev();
+		logerror("NMK112 '%s': VGM DevPtr %p\n", m_rom0.finder_tag(), m_vgm_log0);
+		if (m_page_mask & 0x01)
+			m_vgm_log0->Write(0x00, 0x0E, 0x81);
+		else
+			m_vgm_log0->Write(0x00, 0x0E, 0x01);
+		machine().vgm_logger().ChangeROMData(m_size0 + 0x40000, m_rom0, m_size0, m_rom0 + 0x40000);
+	}
 
 	if (m_rom1)
+	{
 		m_size1 = m_rom1.bytes() - 0x40000;
+		m_vgm_log1 = machine().device<okim6295_device>(m_rom1.finder_tag())->get_vgmlog_dev();
+		logerror("NMK112 '%s': VGM DevPtr %p\n", m_rom1.finder_tag(), m_vgm_log1);
+		if (m_page_mask & 0x02)
+			m_vgm_log1->Write(0x00, 0x0E, 0x81);
+		else
+			m_vgm_log1->Write(0x00, 0x0E, 0x01);
+		machine().vgm_logger().ChangeROMData(m_size1 + 0x40000, m_rom1, m_size1, m_rom1 + 0x40000);
+	}
 }
 
 //-------------------------------------------------
@@ -92,6 +114,14 @@ void nmk112_device::do_bankswitch( int offset, int data )
 
 void nmk112_device::okibank_w(offs_t offset, u8 data)
 {
+	uint8_t chip = (offset & 4) >> 2;
+	uint8_t banknum = offset & 3;
+	VGMDeviceLog* vgm_log = chip ? m_vgm_log1 : m_vgm_log0;
+
+	// I want the bank change always to be written to the VGM.
+	if (vgm_log != nullptr)
+		vgm_log->Write(0x00, 0x10 | banknum, data);
+
 	if (m_current_bank[offset] != data)
 		do_bankswitch(offset, data);
 }

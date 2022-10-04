@@ -35,6 +35,7 @@
  */
 
 #include "emu.h"
+#include "vgmwrite.hpp"
 #include "multipcm.h"
 #include "wavwrite.h"
 
@@ -443,6 +444,7 @@ uint8_t multipcm_device::read()
 
 void multipcm_device::write(offs_t offset, uint8_t data)
 {
+	m_vgm_log->Write(0x00, offset, data);
 	switch(offset)
 	{
 		case 0: // Data write
@@ -468,6 +470,7 @@ multipcm_device::multipcm_device(const machine_config &mconfig, const char *tag,
 	device_sound_interface(mconfig, *this),
 	device_rom_interface(mconfig, *this),
 	m_stream(nullptr),
+	m_vgm_log(VGMLogger::GetDummyChip()),
 	m_slots(nullptr),
 	m_cur_slot(0),
 	m_address(0),
@@ -582,6 +585,21 @@ void multipcm_device::device_start()
 		const float db = -(96.0f - (96.0f * (float)i / (float)0x400));
 		const float exp_volume = powf(10.0f, db / 20.0f);
 		m_linear_to_exp_volume[i] = value_to_fixed(TL_SHIFT, exp_volume);
+	}
+
+	m_vgm_log = machine().vgm_logger().OpenDevice(VGMC_MULTIPCM, clock() * 180 / 224);
+	if (memregion(DEVICE_SELF) != nullptr)
+	{
+		m_vgm_log->DumpSampleROM(0x01, memregion(DEVICE_SELF));
+	}
+	else
+	{
+		logerror("ROM Tag: %s\n", get_device_rom_name());
+		auto memreg = get_device_rom();
+		if (memreg != nullptr)
+			m_vgm_log->DumpSampleROM(0x01, memreg);
+		else
+			m_vgm_log->DumpSampleROM(0x01, space());	// try to look up the ROM via space
 	}
 
 	save_item(NAME(m_cur_slot));

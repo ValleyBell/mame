@@ -123,6 +123,7 @@
 *************************************************************/
 
 #include "emu.h"
+#include "vgmwrite.hpp"
 #include "upd7759.h"
 
 
@@ -152,6 +153,7 @@ upd775x_device::upd775x_device(const machine_config &mconfig, device_type type, 
 	, device_sound_interface(mconfig, *this)
 	, device_rom_interface(mconfig, *this)
 	, m_channel(nullptr)
+	, m_vgm_log(VGMLogger::GetDummyChip())
 	, m_sample_offset_shift(0)
 	, m_pos(0)
 	, m_step(0)
@@ -221,6 +223,11 @@ void upd775x_device::device_start()
 
 	m_clock_period = clock() ? attotime::from_hz(clock()) : attotime::zero;
 
+	m_vgm_log = machine().vgm_logger().OpenDevice(VGMC_UPD7759, clock());
+	m_vgm_log->SetProperty(0x01, m_sample_offset_shift);	// set uPD7759/56 mode
+	m_vgm_log->SetProperty(0x00, m_md ? 0x00 : 0x01);	// write master/slave mode
+	m_vgm_log->DumpSampleROM(0x01, memregion(DEVICE_SELF));
+
 	save_item(NAME(m_pos));
 	save_item(NAME(m_step));
 
@@ -267,6 +274,7 @@ void upd7759_device::device_start()
 	upd775x_device::device_start();
 
 	m_sample_offset_shift = 1;
+	m_vgm_log->SetProperty(0x01, m_sample_offset_shift);	// set uPD7759 mode
 
 	m_timer = timer_alloc(FUNC(upd7759_device::drq_update), this);
 
@@ -598,6 +606,7 @@ TIMER_CALLBACK_MEMBER(upd7759_device::drq_update)
 
 WRITE_LINE_MEMBER( upd775x_device::reset_w )
 {
+	m_vgm_log->Write(0x00, 0x00, state);
 	machine().scheduler().synchronize(timer_expired_delegate(FUNC(upd775x_device::internal_reset_w), this), state);
 }
 
@@ -630,6 +639,7 @@ TIMER_CALLBACK_MEMBER(upd7759_device::internal_reset_w)
 
 WRITE_LINE_MEMBER( upd775x_device::start_w )
 {
+	m_vgm_log->Write(0x00, 0x01, state);
 	machine().scheduler().synchronize(timer_expired_delegate(FUNC(upd775x_device::internal_start_w), this), state);
 }
 
@@ -669,6 +679,8 @@ void upd7756_device::internal_start_w(int state)
 
 WRITE_LINE_MEMBER(upd7759_device::md_w)
 {
+	m_vgm_log->SetProperty(0x00, state ? 0x00 : 0x01);	// write master/slave mode
+
 	// When called from machine configs/during start up set the mode pin directly.
 	if (m_timer == nullptr)
 	{
@@ -706,6 +718,7 @@ TIMER_CALLBACK_MEMBER(upd7759_device::internal_md_w)
 
 void upd775x_device::port_w(u8 data)
 {
+	m_vgm_log->Write(0x00, 0x02, data);
 	machine().scheduler().synchronize(timer_expired_delegate(FUNC(upd775x_device::sync_port_write), this), data);
 }
 

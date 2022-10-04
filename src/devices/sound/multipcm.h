@@ -20,6 +20,8 @@ class multipcm_device : public device_t,
 public:
 	multipcm_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock);
 
+	VGMDeviceLog* get_vgmlog_dev() const { return m_vgm_log; }	// for Sega Model 1/System 32
+
 	void write(offs_t offset, uint8_t data);
 	uint8_t read();
 
@@ -101,6 +103,7 @@ private:
 
 	// internal state
 	sound_stream *m_stream;
+	VGMDeviceLog* m_vgm_log;
 	std::unique_ptr<slot_t[]> m_slots;
 	uint32_t m_cur_slot;
 	uint32_t m_address;
