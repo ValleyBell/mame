@@ -59,8 +59,7 @@ class VGMLogger
 public:
 	typedef uint16_t gd3char_t;	// UTF-16 character, for VGM GD3 tag
 
-private:
-	struct VGM_HEADER
+	struct VGM_HEADER	// public, due to some static functions
 	{
 		uint32_t fccVGM;
 		uint32_t lngEOFOffset;
@@ -154,12 +153,13 @@ private:
 		gd3char_t strNotes[0x50];
 	};	// -> 0x200 Bytes
 
+private:
 	struct VGM_ROM_DATA
 	{
-		uint8_t Type;
+		uint8_t type;
 		uint8_t dstart_msb;
-		uint32_t DataSize;
-		const void* Data;
+		uint32_t dataSize;
+		const void* data;
 	};
 	struct VGM_INIT_CMD
 	{

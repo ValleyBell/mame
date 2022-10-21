@@ -127,6 +127,32 @@ static void DumpEmptyData(FILE* hFile, size_t dataLen, uint8_t fill)
 	return;
 }
 
+static bool PatchROMBlock(uint8_t romType, uint32_t& dataSize, const void*& data, uint32_t startOfs,
+	std::vector<uint8_t>& patchBuffer, const VGMLogger::VGM_HEADER& vh)
+{
+	const uint8_t* dbytes = static_cast<const uint8_t*>(data);
+	
+	switch(romType)
+	{
+	case 0x8D:	// Type: C140 ROM Data
+		if (vh.bytC140Type == 0x02)
+			return false;	// no patching for C219 ROM
+		
+		dataSize /= 2;
+		startOfs /= 2;
+		if (data == nullptr || startOfs >= dataSize)
+			return true;
+		
+		patchBuffer.resize(dataSize);
+		for (uint32_t curPos = 0x00; curPos < dataSize; curPos ++)
+			patchBuffer[curPos] = dbytes[curPos * 2 + 1];	// 16-bit word access (upper-byte only) -> 8-bit ROM
+		
+		data = patchBuffer.data();
+		return true;
+	}
+	return false;
+}
+
 VGMDeviceLog::VGMDeviceLog()
 	: _machine(nullptr)
 	, _vgmlog(nullptr)
@@ -468,8 +494,7 @@ void VGMLogger::Header_PostWrite(VGM_INF& vf)
 	
 	VGM_HEADER& vh = vf.header;
 	uint32_t curcmd;
-	uint32_t blkSize;
-	uint32_t templng;
+	std::vector<uint8_t> romPatchBuf;	// temporary buffer for patched ROM data
 	
 	print_info("Writing VGM Header ...\n");
 	fseek(vf.hFile, 0x00, SEEK_SET);
@@ -481,26 +506,29 @@ void VGMLogger::Header_PostWrite(VGM_INF& vf)
 	for (curcmd = 0x00; curcmd < vf.DataCount; curcmd ++)
 	{
 		VGM_ROM_DATA& vrd = vf.DataBlk[curcmd];
-		blkSize = 0x08;
-		if (vrd.Data != nullptr || dumpEmptyBlocks)
-			blkSize += vrd.DataSize;
-		vrd.DataSize &= 0x7FFFFFFF;
+		uint32_t dataLen = vrd.dataSize & 0x7FFFFFFF;
+		const void* data = vrd.data;
+		uint32_t blkSize = 0x08 | (vrd.dataSize & 0x80000000);
+		uint32_t startOfs = 0x00;
+		
+		PatchROMBlock(vrd.type, dataLen, data, startOfs, romPatchBuf, vh);
+		if (data != nullptr || dumpEmptyBlocks)
+			blkSize += dataLen;
 		
 		fputc(0x67, vf.hFile);
 		fputc(0x66, vf.hFile);
-		fputc(vrd.Type, vf.hFile);
+		fputc(vrd.type, vf.hFile);
 		fwrite(&blkSize, 0x04, 0x01, vf.hFile);		// Data Block Size
-		fwrite(&vrd.DataSize, 0x04, 0x01, vf.hFile);	// ROM Size
-		templng = 0x00;
-		templng |= (vrd.dstart_msb << 24);
-		fwrite(&templng, 0x04, 0x01, vf.hFile);		// Data Base Address
-		if (vrd.Data == nullptr && dumpEmptyBlocks)
-			DumpEmptyData(vf.hFile, vrd.DataSize, 0x00);
-		else if (vrd.Data != nullptr)
+		fwrite(&dataLen, 0x04, 0x01, vf.hFile);		// ROM Size
+		startOfs |= (vrd.dstart_msb << 24);
+		fwrite(&startOfs, 0x04, 0x01, vf.hFile);	// Data Base Address
+		if (data == nullptr && dumpEmptyBlocks)
+			DumpEmptyData(vf.hFile, dataLen, 0x00);
+		else if (data != nullptr)
 		{
-			size_t wrtByt = fwrite(vrd.Data, 0x01, vrd.DataSize, vf.hFile);
-			if (wrtByt != vrd.DataSize)
-				print_info("Warning VGM Header_PostWrite: wrote only 0x%X bytes instead of 0x%X!\n", (uint32_t)wrtByt, vrd.DataSize);
+			size_t wrtByt = fwrite(data, 0x01, dataLen, vf.hFile);
+			if (wrtByt != dataLen)
+				print_info("Warning VGM Header_PostWrite: wrote only 0x%X bytes instead of 0x%X!\n", (uint32_t)wrtByt, dataLen);
 		}
 		vf.BytesWrt += 0x07 + (blkSize & 0x7FFFFFFF);
 	}
@@ -2158,10 +2186,10 @@ void VGMDeviceLog::WriteLargeData(uint8_t type, uint32_t blockSize, uint32_t sta
 				VGMLogger::VGM_ROM_DATA& vrd = vf.DataBlk[vf.DataCount];
 				vf.DataCount ++;
 				
-				vrd.Type = blkType;
+				vrd.type = blkType;
 				vrd.dstart_msb = dstart_msb;
-				vrd.DataSize = blockSize | ((_chipType & 0x80) << 24);
-				vrd.Data = data;
+				vrd.dataSize = blockSize | ((_chipType & 0x80) << 24);
+				vrd.data = data;
 			}
 			break;
 		case 0xC0:	// RAM Writes
@@ -2175,6 +2203,7 @@ void VGMDeviceLog::WriteLargeData(uint8_t type, uint32_t blockSize, uint32_t sta
 	fputc(blkType, vf.hFile);
 	
 	uint32_t finalSize;
+	std::vector<uint8_t> romPatchBuf;	// temporary buffer for patched ROM data
 	switch(blkType & 0xC0)
 	{
 	case 0x00:	// Normal Data Block
@@ -2204,6 +2233,8 @@ void VGMDeviceLog::WriteLargeData(uint8_t type, uint32_t blockSize, uint32_t sta
 			startOfs = 0x00;
 			dataLen = 0x00;
 		}
+		
+		PatchROMBlock(blkType, dataLen, data, startOfs, romPatchBuf, vf.header);
 		finalSize = 0x08 + dataLen;
 		finalSize |= (_chipType & 0x80) << 24;
 		startOfs |= (dstart_msb << 24);
@@ -2234,6 +2265,7 @@ void VGMDeviceLog::WriteLargeData(uint8_t type, uint32_t blockSize, uint32_t sta
 			dataLen = 0x00;
 		}
 		
+		PatchROMBlock(blkType, dataLen, data, startOfs, romPatchBuf, vf.header);
 		if (! (blkType & 0x20))
 		{
 			finalSize = 0x02 + dataLen;
@@ -2324,50 +2356,33 @@ void VGMDeviceLog::FlushPCMCache(void)
 	//print_info("Flushing PCM Data: Chip %02X, Addr %06X, Size %06X\n",
 	//			_chipType, _pcmCache.Start, _pcmCache.Pos);
 	
-	uint8_t singleWrt;
+	bool singleWrt;
+	uint8_t blkType;
 	uint8_t cmdType;
 	
-	if (_pcmCache.Pos == 0x01 && (_chipType & 0x7F) != VGMC_SCSP)
-		singleWrt = 0x01;
-	else
-		singleWrt = 0x00;
-	
-	if (singleWrt)
+	cmdType = 0xFF;
+	blkType = 0xFF;
+	switch(_chipType & 0x7F)
 	{
-		switch(_chipType & 0x7F)
-		{
-		case VGMC_RF5C68:
-			cmdType = 0xC1;
-			break;
-		case VGMC_RF5C164:
-			cmdType = 0xC2;
-			break;
-		default:
-			cmdType = 0xFF;
-			break;
-		}
+	case VGMC_RF5C68:
+		cmdType = 0xC1;
+		blkType = 0xC0;
+		break;
+	case VGMC_RF5C164:
+		cmdType = 0xC2;
+		blkType = 0xC1;
+		break;
+	case VGMC_SCSP:
+		blkType = 0xE0;
+		break;
+	case VGMC_ES5503:
+		blkType = 0xE1;
+		break;
 	}
+	if (_pcmCache.Pos == 0x01 && cmdType != 0xFF)
+		singleWrt = true;
 	else
-	{
-		switch(_chipType & 0x7F)
-		{
-		case VGMC_RF5C68:
-			cmdType = 0xC0;
-			break;
-		case VGMC_RF5C164:
-			cmdType = 0xC1;
-			break;
-		case VGMC_SCSP:
-			cmdType = 0xE0;
-			break;
-		case VGMC_ES5503:
-			cmdType = 0xE1;
-			break;
-		default:
-			cmdType = 0xFF;
-			break;
-		}
-	}
+		singleWrt = false;
 	
 	if (singleWrt)
 	{
@@ -2385,8 +2400,8 @@ void VGMDeviceLog::FlushPCMCache(void)
 		// calling WriteLargeData() doesn't work if FlushPCMCache() is called from WriteDelay()
 		fputc(0x67, vf.hFile);
 		fputc(0x66, vf.hFile);
-		fputc(cmdType, vf.hFile);
-		if (! (cmdType & 0x20))
+		fputc(blkType, vf.hFile);
+		if (! (blkType & 0x20))
 		{
 			finalSize = 0x02 + _pcmCache.Pos;
 			finalSize |= (_chipType & 0x80) << 24;
@@ -2425,12 +2440,12 @@ void VGMLogger::ChangeROMData(uint32_t oldsize, const void* olddata, uint32_t ne
 		for (curdblk = 0x00; curdblk < vf.DataCount; curdblk ++)
 		{
 			VGM_ROM_DATA& vrd = vf.DataBlk[curdblk];
-			if ((vrd.DataSize & 0x7FFFFFFF) == oldsize && vrd.Data == olddata)
+			if ((vrd.dataSize & 0x7FFFFFFF) == oldsize && vrd.data == olddata)
 			{
-				print_info("Match found in VGM %02X, Block Type %02X\n", &vf - &_files[0], vrd.Type);
-				vrd.DataSize &= 0x80000000;	// keep "chip select" bit
-				vrd.DataSize |= newsize;
-				vrd.Data = newdata;
+				print_info("Match found in VGM %02X, Block Type %02X\n", &vf - &_files[0], vrd.type);
+				vrd.dataSize &= 0x80000000;	// keep "chip select" bit
+				vrd.dataSize |= newsize;
+				vrd.data = newdata;
 			}
 		}
 	}

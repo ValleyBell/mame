@@ -155,7 +155,7 @@ void c140_device::device_start()
 	if (type() == C219)
 		m_vgm_log->SetProperty(0x01, 0x02);
 	else
-		m_vgm_log->SetProperty(0x01, 0x03);
+		m_vgm_log->SetProperty(0x01, 0x00);
 	if (memregion(DEVICE_SELF))
 	{
 		m_vgm_log->DumpSampleROM(0x01, memregion(DEVICE_SELF));

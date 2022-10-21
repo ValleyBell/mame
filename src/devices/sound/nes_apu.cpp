@@ -431,7 +431,10 @@ static inline void apu_dpcmreset(apu_t::dpcm_t *chan, VGMDeviceLog* vgmLog, nesa
 	chan->bits_left = chan->length << 3;
 	chan->irq_occurred = false;
 	chan->enabled = true; /* Fixed * Proper DPCM channel ENABLE/DISABLE flag behaviour*/
-	vgmLog->WriteLargeData(0x01, 0x10000, chan->address, chan->length, mem_get(chan->address));
+	if (mem_get)
+		vgmLog->WriteLargeData(0x01, 0x10000, chan->address, chan->length, mem_get(chan->address));
+	else
+		printf("nesapu_device::get_mem_func not set!\n");	// can't use logerror, as we are not in a device class here
 }
 
 /* OUTPUT DPCM WAVE SAMPLE (VALUES FROM 0 to +127) */
