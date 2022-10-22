@@ -230,21 +230,20 @@ void nes_disksys_device::write_ex(offs_t offset, uint8_t data)
 {
 	LOG_MMC(("Famicom Disk System write_ex, offset: %04x, data: %02x\n", offset, data));
 
-	// TODO: capture in sound device directly [src/devices/sound/rp2c33_snd.h]
 	if (offset >= 0x20 && offset < 0x60)
 	{
 		m_vgm_log->Write(0x00, offset + 0x20, data);	// 40..7F
-		logerror("VGMLog FDS: Wave - ofs %02X = %02X\n", offset + 0x20, data);
+		//logerror("VGMLog FDS: Wave - ofs %02X = %02X\n", offset + 0x20, data);
 	}
 	else if (offset >= 0x60 && offset < 0x7F)
 	{
 		m_vgm_log->Write(0x00, offset - 0x40, data);	// 20..3E
-		logerror("VGMLog FDS: Write - ofs %02X = %02X\n", offset - 0x40, data);
+		//logerror("VGMLog FDS: Write - ofs %02X = %02X\n", offset - 0x40, data);
 	}
 	else if (offset == 0x03)
 	{
 		m_vgm_log->Write(0x00, 0x3F, data);
-		logerror("VGMLog FDS: Enable - ofs %02X = %02X\n", 0x3F, data);
+		//logerror("VGMLog FDS: Enable - ofs %02X = %02X\n", 0x3F, data);
 	}
 
 	if (offset >= 0x20 && offset < 0x60)

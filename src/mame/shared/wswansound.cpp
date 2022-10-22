@@ -365,7 +365,7 @@ void wswan_sound_device::port_w(offs_t offset, u16 data, u16 mem_mask)
 					// Since we didn't log those RAM writes before,
 					// we need to log the memory we are going to access to VGM now.
 					for (u16 addr = m_sample_address; addr < m_sample_address + 0x40; addr += 2)
-						vram_w(addr >> 1, read_word(addr), ~1);
+						vram_w(addr >> 1, read_word(addr), ~0);
 #endif
 				}
 			}

@@ -69,7 +69,7 @@ void k051649_device::device_start()
 	// get stream channels
 	m_stream = stream_alloc(0, 1, clock());
 
-	m_vgm_log = machine().vgm_logger().OpenDevice(VGMC_K051649, clock());
+	m_vgm_log = machine().vgm_logger().OpenDevice(VGMC_K051649, clock() / 2);
 
 	// save states
 	save_item(STRUCT_MEMBER(m_channel_list, counter));
