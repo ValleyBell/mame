@@ -291,7 +291,8 @@ uint16_t pico_base_state::pico_68k_io_read(offs_t offset)
 		case 13:
 		case 14:
 		case 15:
-			logerror("pico_68k_io_read %d\n", offset);
+			if (!machine().side_effects_disabled())
+				logerror("pico_68k_io_read %d\n", offset);
 
 	}
 
@@ -303,7 +304,8 @@ void pico_base_state::sound_cause_irq(int state)
 {
 //  printf("sound irq\n");
 	/* sega_315_5641_pcm callback */
-	m_maincpu->set_input_line(3, HOLD_LINE);
+	// HOLD_LINE seems to be correct, as the interrupt routines don't write to the PCM FIFO buffer when the sample is finished
+	m_maincpu->set_input_line(3, state ? HOLD_LINE : CLEAR_LINE);
 }
 
 void pico_base_state::pico_68k_io_write(offs_t offset, uint16_t data, uint16_t mem_mask)

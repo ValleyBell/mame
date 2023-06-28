@@ -30,6 +30,8 @@ public:
 
 	void set_rom(const void *base, u32 size);
 	void set_rom_bank(int bank);
+	memory_region* get_device_rom() { return m_rom_region; }
+	const char* get_device_rom_name() const { return m_rom_region ? m_rom_region->name().c_str() : nullptr; }
 
 protected:
 	virtual void rom_bank_pre_change() { }

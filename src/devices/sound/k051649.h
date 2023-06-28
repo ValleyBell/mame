@@ -71,6 +71,8 @@ private:
 
 	/* chip registers */
 	u8 m_test;
+
+	VGMDeviceLog* m_vgm_log;
 };
 
 DECLARE_DEVICE_TYPE(K051649, k051649_device)

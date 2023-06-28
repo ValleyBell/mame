@@ -2,6 +2,7 @@
 // copyright-holders:Aaron Giles
 
 #include "emu.h"
+#include "vgmwrite.hpp"
 #include "ymopn.h"
 
 
@@ -16,7 +17,8 @@ DEFINE_DEVICE_TYPE(YM2203, ym2203_device, "ym2203", "YM2203 OPN")
 //-------------------------------------------------
 
 ym2203_device::ym2203_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock) :
-	ymfm_ssg_device_base<ymfm::ym2203>(mconfig, tag, owner, clock, YM2203)
+	ymfm_ssg_device_base<ymfm::ym2203>(mconfig, tag, owner, clock, YM2203),
+	m_vgm_log(VGMLogger::GetDummyChip())
 {
 }
 
@@ -32,6 +34,39 @@ void ym2203_device::device_start()
 
 	// call our parent
 	parent::device_start();
+
+	m_vgm_log = machine().vgm_logger().OpenDevice(VGMC_YM2203, clock());
+	m_vgm_log->SetProperty(0x01, 0x00);
+}
+
+void ym2203_device::write(offs_t offset, u8 data)
+{
+	parent::write(offset, data);
+	if (offset & 0x01)
+		m_vgm_log->Write(offset >> 1, m_reg, data);
+	else
+	{
+		m_reg = data;
+		if (data >= 0x2D && data <= 0x2F)
+			m_vgm_log->Write(offset >> 1, data, 0);
+	}
+	//logerror("YM2203 Write: Ofs %02X, Data %02X\n", offset, data);
+}
+
+void ym2203_device::address_w(u8 data)
+{
+	parent::address_w(data);
+	m_reg = data;
+	if (data >= 0x2D && data <= 0x2F)
+		m_vgm_log->Write(0, data, 0);
+	//logerror("YM2203 Addr = %02X\n", data);
+}
+
+void ym2203_device::data_w(u8 data)
+{
+	parent::data_w(data);
+	m_vgm_log->Write(0, m_reg, data);
+	//logerror("YM2203 Data = %02X\n", data);
 }
 
 
@@ -49,6 +84,7 @@ DEFINE_DEVICE_TYPE(YM2608, ym2608_device, "ym2608", "YM2608 OPNA")
 ym2608_device::ym2608_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock) :
 	ymfm_ssg_device_base<ymfm::ym2608>(mconfig, tag, owner, clock, YM2608),
 	device_rom_interface(mconfig, *this),
+	m_vgm_log(VGMLogger::GetDummyChip()),
 	m_internal(*this, "internal")
 {
 }
@@ -65,6 +101,51 @@ void ym2608_device::device_start()
 
 	// call our parent
 	parent::device_start();
+
+	m_vgm_log = machine().vgm_logger().OpenDevice(VGMC_YM2608, clock());
+	m_vgm_log->SetProperty(0x01, 0x00);
+	m_vgm_log->DumpSampleROM(0x01, space(0));	// dump ADPCM-B
+}
+
+void ym2608_device::write(offs_t offset, u8 data)
+{
+	parent::write(offset, data);
+	if (offset & 0x01)
+		m_vgm_log->Write(offset >> 1, m_reg[(offset >> 1) & 0x01], data);
+	else
+	{
+		m_reg[(offset >> 1) & 0x01] = data;
+		if (data >= 0x2D && data <= 0x2F)
+			m_vgm_log->Write(offset >> 1, data, 0);
+	}
+}
+
+void ym2608_device::address_w(u8 data)
+{
+	parent::address_w(data);
+	m_reg[0] = data;
+	if (data >= 0x2D && data <= 0x2F)
+		m_vgm_log->Write(0, data, 0);
+}
+
+void ym2608_device::data_w(u8 data)
+{
+	parent::data_w(data);
+	m_vgm_log->Write(0, m_reg[0], data);
+}
+
+void ym2608_device::address_hi_w(u8 data)
+{
+	update_streams().write_address_hi(data);
+	m_reg[1] = data;
+	if (data >= 0x2D && data <= 0x2F)
+		m_vgm_log->Write(1, data, 0);
+}
+
+void ym2608_device::data_hi_w(u8 data)
+{
+	update_streams().write_data_hi(data);
+	m_vgm_log->Write(1, m_reg[1], data);
 }
 
 
@@ -150,11 +231,58 @@ template<typename ChipClass>
 ym2610_device_base<ChipClass>::ym2610_device_base(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock, device_type type) :
 	ymfm_ssg_device_base<ChipClass>(mconfig, tag, owner, clock, type),
 	device_memory_interface(mconfig, *this),
+	m_vgm_log(VGMLogger::GetDummyChip()),
 	m_adpcm_a_config("adpcm_a", ENDIANNESS_LITTLE, 8, 24, 0),
 	m_adpcm_b_config("adpcm_b", ENDIANNESS_LITTLE, 8, 24, 0),
 	m_adpcm_a_region(*this, "adpcma"),
 	m_adpcm_b_region(*this, "adpcmb")
 {
+}
+
+template<typename ChipClass>
+void ym2610_device_base<ChipClass>::write(offs_t offset, u8 data)
+{
+	parent::write(offset, data);
+	if (offset & 0x01)
+		m_vgm_log->Write(offset >> 1, m_reg[(offset >> 1) & 0x01], data);
+	else
+	{
+		m_reg[(offset >> 1) & 0x01] = data;
+		if (data >= 0x2D && data <= 0x2F)
+			m_vgm_log->Write(offset >> 1, data, 0);
+	}
+}
+
+template<typename ChipClass>
+void ym2610_device_base<ChipClass>::address_w(u8 data)
+{
+	parent::address_w(data);
+	m_reg[0] = data;
+	if (data >= 0x2D && data <= 0x2F)
+		m_vgm_log->Write(0, data, 0);
+}
+
+template<typename ChipClass>
+void ym2610_device_base<ChipClass>::data_w(u8 data)
+{
+	parent::data_w(data);
+	m_vgm_log->Write(0, m_reg[0], data);
+}
+
+template<typename ChipClass>
+void ym2610_device_base<ChipClass>::address_hi_w(u8 data)
+{
+	update_streams().write_address_hi(data);
+	m_reg[1] = data;
+	if (data >= 0x2D && data <= 0x2F)
+		m_vgm_log->Write(1, data, 0);
+}
+
+template<typename ChipClass>
+void ym2610_device_base<ChipClass>::data_hi_w(u8 data)
+{
+	update_streams().write_data_hi(data);
+	m_vgm_log->Write(1, m_reg[1], data);
 }
 
 
@@ -186,6 +314,9 @@ void ym2610_device_base<ChipClass>::device_start()
 	// call our parent
 	parent::device_start();
 
+	m_vgm_log = parent::machine().vgm_logger().OpenDevice(VGMC_YM2610, parent::clock());
+	m_vgm_log->SetProperty(0x00, (parent::type() == YM2610B));	// set YM2610B mode
+
 	// automatically map memory regions if not configured externally
 	if (!has_configured_map(0) && !has_configured_map(1))
 	{
@@ -196,6 +327,18 @@ void ym2610_device_base<ChipClass>::device_start()
 			space(1).install_rom(0, m_adpcm_b_region->bytes() - 1, m_adpcm_b_region->base());
 		else if (m_adpcm_a_region)
 			space(1).install_rom(0, m_adpcm_a_region->bytes() - 1, m_adpcm_a_region->base());
+	}
+
+	if (m_vgm_log != nullptr)
+	{
+		//m_vgm_log->DumpSampleROM(0x01, space(0));	// ADPCM-A
+		//m_vgm_log->DumpSampleROM(0x02, space(1));	// ADPCM-B
+		if (m_adpcm_a_region)
+			m_vgm_log->DumpSampleROM(0x01, m_adpcm_a_region);	// ADPCM-A
+		if (m_adpcm_b_region)
+			m_vgm_log->DumpSampleROM(0x02, m_adpcm_b_region);	// ADPCM-B
+		else if (m_adpcm_a_region)
+			m_vgm_log->DumpSampleROM(0x02, m_adpcm_a_region);	// ADPCM-B (shared with -A)
 	}
 }
 
@@ -261,8 +404,58 @@ DEFINE_DEVICE_TYPE(YM2612, ym2612_device, "ym2612", "YM2612 OPN2")
 //-------------------------------------------------
 
 ym2612_device::ym2612_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock) :
-	ymfm_device_base<ymfm::ym2612>(mconfig, tag, owner, clock, YM2612)
+	ymfm_device_base<ymfm::ym2612>(mconfig, tag, owner, clock, YM2612),
+	m_vgm_log(VGMLogger::GetDummyChip())
 {
+}
+
+void ym2612_device::device_start()
+{
+	parent::device_start();
+
+	m_vgm_log = machine().vgm_logger().OpenDevice(VGMC_YM2612, clock());
+	m_vgm_log->SetProperty(0x00, 0x00);	// YM2612 mode
+}
+
+void ym2612_device::write(offs_t offset, u8 data)
+{
+	parent::write(offset, data);
+	if (offset & 0x01)
+		m_vgm_log->Write(offset >> 1, m_reg[(offset >> 1) & 0x01], data);
+	else
+	{
+		m_reg[(offset >> 1) & 0x01] = data;
+		if (data >= 0x2D && data <= 0x2F)
+			m_vgm_log->Write(offset >> 1, data, 0);
+	}
+}
+
+void ym2612_device::address_w(u8 data)
+{
+	parent::address_w(data);
+	m_reg[0] = data;
+	if (data >= 0x2D && data <= 0x2F)
+		m_vgm_log->Write(0, data, 0);
+}
+
+void ym2612_device::data_w(u8 data)
+{
+	parent::data_w(data);
+	m_vgm_log->Write(0, m_reg[0], data);
+}
+
+void ym2612_device::address_hi_w(u8 data)
+{
+	update_streams().write_address_hi(data);
+	m_reg[1] = data;
+	if (data >= 0x2D && data <= 0x2F)
+		m_vgm_log->Write(1, data, 0);
+}
+
+void ym2612_device::data_hi_w(u8 data)
+{
+	update_streams().write_data_hi(data);
+	m_vgm_log->Write(1, m_reg[1], data);
 }
 
 
@@ -278,8 +471,58 @@ DEFINE_DEVICE_TYPE(YM3438, ym3438_device, "ym3438", "YM3438 OPN2C")
 //-------------------------------------------------
 
 ym3438_device::ym3438_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock) :
-	ymfm_device_base<ymfm::ym3438>(mconfig, tag, owner, clock, YM3438)
+	ymfm_device_base<ymfm::ym3438>(mconfig, tag, owner, clock, YM3438),
+	m_vgm_log(VGMLogger::GetDummyChip())
 {
+}
+
+void ym3438_device::device_start()
+{
+	parent::device_start();
+
+	m_vgm_log = machine().vgm_logger().OpenDevice(VGMC_YM2612, clock());
+	m_vgm_log->SetProperty(0x00, 0x01);	// YM3438 mode
+}
+
+void ym3438_device::write(offs_t offset, u8 data)
+{
+	parent::write(offset, data);
+	if (offset & 0x01)
+		m_vgm_log->Write(offset >> 1, m_reg[(offset >> 1) & 0x01], data);
+	else
+	{
+		m_reg[(offset >> 1) & 0x01] = data;
+		if (data >= 0x2D && data <= 0x2F)
+			m_vgm_log->Write(offset >> 1, data, 0);
+	}
+}
+
+void ym3438_device::address_w(u8 data)
+{
+	parent::address_w(data);
+	m_reg[0] = data;
+	if (data >= 0x2D && data <= 0x2F)
+		m_vgm_log->Write(0, data, 0);
+}
+
+void ym3438_device::data_w(u8 data)
+{
+	parent::data_w(data);
+	m_vgm_log->Write(0, m_reg[0], data);
+}
+
+void ym3438_device::address_hi_w(u8 data)
+{
+	update_streams().write_address_hi(data);
+	m_reg[1] = data;
+	if (data >= 0x2D && data <= 0x2F)
+		m_vgm_log->Write(1, data, 0);
+}
+
+void ym3438_device::data_hi_w(u8 data)
+{
+	update_streams().write_data_hi(data);
+	m_vgm_log->Write(1, m_reg[1], data);
 }
 
 
@@ -295,6 +538,56 @@ DEFINE_DEVICE_TYPE(YMF276, ymf276_device, "ymf276", "YMF276 OPN2L")
 //-------------------------------------------------
 
 ymf276_device::ymf276_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock) :
-	ymfm_device_base<ymfm::ymf276>(mconfig, tag, owner, clock, YMF276)
+	ymfm_device_base<ymfm::ymf276>(mconfig, tag, owner, clock, YMF276),
+	m_vgm_log(VGMLogger::GetDummyChip())
 {
+}
+
+void ymf276_device::device_start()
+{
+	parent::device_start();
+
+	m_vgm_log = machine().vgm_logger().OpenDevice(VGMC_YM2612, clock());
+	m_vgm_log->SetProperty(0x00, 0x01);	// YM3438 mode
+}
+
+void ymf276_device::write(offs_t offset, u8 data)
+{
+	parent::write(offset, data);
+	if (offset & 0x01)
+		m_vgm_log->Write(offset >> 1, m_reg[(offset >> 1) & 0x01], data);
+	else
+	{
+		m_reg[(offset >> 1) & 0x01] = data;
+		if (data >= 0x2D && data <= 0x2F)
+			m_vgm_log->Write(offset >> 1, data, 0);
+	}
+}
+
+void ymf276_device::address_w(u8 data)
+{
+	parent::address_w(data);
+	m_reg[0] = data;
+	if (data >= 0x2D && data <= 0x2F)
+		m_vgm_log->Write(0, data, 0);
+}
+
+void ymf276_device::data_w(u8 data)
+{
+	parent::data_w(data);
+	m_vgm_log->Write(0, m_reg[0], data);
+}
+
+void ymf276_device::address_hi_w(u8 data)
+{
+	update_streams().write_address_hi(data);
+	m_reg[1] = data;
+	if (data >= 0x2D && data <= 0x2F)
+		m_vgm_log->Write(1, data, 0);
+}
+
+void ymf276_device::data_hi_w(u8 data)
+{
+	update_streams().write_data_hi(data);
+	m_vgm_log->Write(1, m_reg[1], data);
 }

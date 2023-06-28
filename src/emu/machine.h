@@ -196,6 +196,7 @@ public:
 	void set_rtc_datetime(const system_time &systime);
 
 	// misc
+	VGMLogger &vgm_logger() const { return *m_vgm_logger; }
 	void popmessage() const { popmessage(static_cast<char const *>(nullptr)); }
 	template <typename Format, typename... Params> void popmessage(Format &&fmt, Params &&... args) const;
 	template <typename Format, typename... Params> void logerror(Format &&fmt, Params &&... args) const;
@@ -345,6 +346,9 @@ private:
 
 	// string formatting buffer
 	mutable util::ovectorstream m_string_buffer;
+
+	// VGM logger
+	std::unique_ptr<VGMLogger> m_vgm_logger;
 
 #if defined(__EMSCRIPTEN__)
 private:

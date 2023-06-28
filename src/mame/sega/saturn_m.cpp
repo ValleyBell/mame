@@ -57,6 +57,7 @@ void saturn_state::saturn_soundram_w(offs_t offset, uint16_t data, uint16_t mem_
 	//machine().scheduler().synchronize(); // force resync
 
 	COMBINE_DATA(&m_sound_ram[offset]);
+	m_scsp->mem_write(offset, data, mem_mask);
 }
 
 uint16_t saturn_state::saturn_soundram_r(offs_t offset)

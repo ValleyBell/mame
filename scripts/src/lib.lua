@@ -132,6 +132,8 @@ end
 		MAME_DIR .. "src/lib/util/vbiparse.h",
 		MAME_DIR .. "src/lib/util/vecstream.cpp",
 		MAME_DIR .. "src/lib/util/vecstream.h",
+		MAME_DIR .. "src/lib/util/vgmwrite.cpp",
+		MAME_DIR .. "src/lib/util/vgmwrite.hpp",
 		MAME_DIR .. "src/lib/util/wavwrite.cpp",
 		MAME_DIR .. "src/lib/util/wavwrite.h",
 		MAME_DIR .. "src/lib/util/xmlfile.cpp",

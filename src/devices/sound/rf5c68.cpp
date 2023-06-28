@@ -8,6 +8,7 @@
 /*********************************************************/
 
 #include "emu.h"
+#include "vgmwrite.hpp"
 #include "rf5c68.h"
 
 
@@ -46,6 +47,7 @@ rf5c68_device::rf5c68_device(const machine_config & mconfig, device_type type, c
 	, device_memory_interface(mconfig, *this)
 	, m_data_config("data", ENDIANNESS_LITTLE, 8, 16) // 15 bit Address + 2 Memory select outputs(total 64KB), PSRAM/SRAM/ROM
 	, m_stream(nullptr)
+	, m_vgm_log(VGMLogger::GetDummyChip())
 	, m_cbank(0)
 	, m_wbank(0)
 	, m_enable(0)
@@ -79,6 +81,11 @@ void rf5c68_device::device_start()
 	// Find our direct access
 	space(0).cache(m_cache);
 	m_sample_end_cb.resolve();
+
+	if (type() == RF5C68)
+		m_vgm_log = machine().vgm_logger().OpenDevice(VGMC_RF5C68, clock());
+	else
+		m_vgm_log = machine().vgm_logger().OpenDevice(VGMC_RF5C164, clock());
 
 	/* allocate the stream */
 	m_stream = stream_alloc(0, 2, clock() / 384);
@@ -226,6 +233,8 @@ void rf5c68_device::rf5c68_w(offs_t offset, u8 data)
 	/* force the stream to update first */
 	m_stream->update();
 
+	m_vgm_log->Write(0x00, offset & 0xFF, data);
+
 	/* switch off the address */
 	switch (offset)
 	{
@@ -296,5 +305,6 @@ u8 rf5c68_device::rf5c68_mem_r(offs_t offset)
 void rf5c68_device::rf5c68_mem_w(offs_t offset, u8 data)
 {
 	m_stream->update();
+	m_vgm_log->Write(0x01, offset & 0xFFFF, data);
 	m_cache.write_byte(m_wbank | offset, data);
 }

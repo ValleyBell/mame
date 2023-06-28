@@ -260,6 +260,8 @@ private:
 	// internal state
 	sound_stream* m_stream;
 
+	VGMDeviceLog* m_vgm_log;
+
 	pokey_channel m_channel[POKEY_CHANNELS];
 
 	uint32_t m_out_raw;         /* raw output */

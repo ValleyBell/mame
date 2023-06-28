@@ -60,6 +60,8 @@ private:
 	sound_stream *  m_stream;
 	emu_timer   *m_timer;
 
+	VGMDeviceLog* m_vgm_log;
+
 	// live state
 	u8           m_portdata[4];
 	u8           m_keyon;

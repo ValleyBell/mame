@@ -43,6 +43,7 @@
  *****************************************************************************/
 
 #include "emu.h"
+#include "vgmwrite.hpp"
 #include "nes_apu.h"
 
 DEFINE_DEVICE_TYPE(NES_APU,  nesapu_device,  "nesapu",  "RP2A0X APU")
@@ -56,6 +57,7 @@ nesapu_device::nesapu_device(const machine_config &mconfig, device_type type, co
 	, m_stream(nullptr)
 	, m_irq_handler(*this)
 	, m_mem_read_cb(*this, 0x00)
+	, m_vgm_log(VGMLogger::GetDummyChip())
 	, m_frame_timer(nullptr)
 {
 }
@@ -163,6 +165,8 @@ void nesapu_device::device_start()
 			}
 		}
 	}
+
+	m_vgm_log = machine().vgm_logger().OpenDevice(VGMC_NESAPU, clock());
 
 	/* register for save */
 	for (int i = 0; i < 2; i++)
@@ -442,12 +446,16 @@ void apu2a03_device::update_lfsr(apu_t::noise_t &chan)
 }
 
 /* RESET DPCM PARAMETERS */
-static inline void apu_dpcmreset(apu_t::dpcm_t *chan)
+static inline void apu_dpcmreset(apu_t::dpcm_t *chan, VGMDeviceLog* vgmLog, nesapu_device::get_mem_func mem_get)
 {
 	chan->address = 0xc000 + u16(chan->regs[2] << 6);
 	chan->length = u16(chan->regs[3] << 4) + 1;
 	chan->bits_left = chan->length << 3;
 	chan->enabled = true; /* Fixed * Proper DPCM channel ENABLE/DISABLE flag behaviour*/
+	if (mem_get)
+		vgmLog->WriteLargeData(0x01, 0x10000, chan->address, chan->length, mem_get(chan->address));
+	else
+		printf("nesapu_device::get_mem_func not set!\n");	// can't use logerror, as we are not in a device class here
 }
 
 /* OUTPUT DPCM WAVE SAMPLE (VALUES FROM 0 to +127) */
@@ -475,7 +483,7 @@ void nesapu_device::apu_dpcm(apu_t::dpcm_t *chan)
 			{
 				chan->enabled = false; /* Fixed * Proper DPCM channel ENABLE/DISABLE flag behaviour*/
 				if (chan->regs[0] & 0x40)
-					apu_dpcmreset(chan);
+					apu_dpcmreset(chan, m_vgm_log, m_mem_get_cb);
 				else
 				{
 					if (chan->regs[0] & 0x80) /* IRQ Generator */
@@ -512,6 +520,7 @@ void nesapu_device::apu_dpcm(apu_t::dpcm_t *chan)
 void nesapu_device::write(offs_t offset, u8 value)
 {
 	m_stream->update();
+	m_vgm_log->Write(0x00, offset, value);
 
 	int chan = BIT(offset, 2);
 
@@ -642,7 +651,7 @@ void nesapu_device::write(offs_t offset, u8 value)
 
 	case apu_t::WRE2:
 		m_APU.dpcm.regs[2] = value;
-		//apu_dpcmreset(m_APU.dpcm);
+		//apu_dpcmreset(&m_APU.dpcm, m_vgm_log, m_mem_get_cb);
 		break;
 
 	case apu_t::WRE3:
@@ -712,7 +721,7 @@ void nesapu_device::write(offs_t offset, u8 value)
 			if (!m_APU.dpcm.enabled)
 			{
 				m_APU.dpcm.enabled = true;
-				apu_dpcmreset(&m_APU.dpcm);
+				apu_dpcmreset(&m_APU.dpcm, m_vgm_log, m_mem_get_cb);
 			}
 		}
 		else

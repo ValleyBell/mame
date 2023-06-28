@@ -68,6 +68,7 @@
 ***************************************************************************/
 
 #include "emu.h"
+#include "vgmwrite.hpp"
 #include "saa1099.h"
 
 static constexpr int clock_divider = 256;
@@ -140,6 +141,7 @@ saa1099_device::saa1099_device(const machine_config &mconfig, const char *tag, d
 	: device_t(mconfig, SAA1099, tag, owner, clock)
 	, device_sound_interface(mconfig, *this)
 	, m_stream(nullptr)
+	, m_vgm_log(VGMLogger::GetDummyChip())
 	, m_noise_params{ 0, 0 }
 	, m_env_enable{ false, false }
 	, m_env_reverse_right{ false, false }
@@ -162,6 +164,8 @@ void saa1099_device::device_start()
 {
 	/* for each chip allocate one stream */
 	m_stream = stream_alloc(0, 2, clock()/clock_divider);
+
+	m_vgm_log = machine().vgm_logger().OpenDevice(VGMC_SAA1099, clock());
 
 	save_item(NAME(m_noise_params));
 	save_item(NAME(m_env_enable));
@@ -376,6 +380,8 @@ void saa1099_device::data_w(u8 data)
 
 	/* first update the stream to this point in time */
 	m_stream->update();
+
+	m_vgm_log->Write(0x00, reg & 0x7F, data);
 
 	switch (reg)
 	{

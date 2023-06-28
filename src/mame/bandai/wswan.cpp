@@ -139,6 +139,7 @@ protected:
 	u16 bios_r(offs_t offset, u16 mem_mask);
 	u16 port_r(offs_t offset, u16 mem_mask);
 	void port_w(offs_t offset, u16 data, u16 mem_mask);
+	void vram_w(offs_t offset, u16 data, u16 mem_mask);
 
 	void set_irq_line(int irq);
 	void dma_sound_cb();
@@ -177,7 +178,8 @@ protected:
 
 void wswan_state::mem_map(address_map &map)
 {
-	map(0x00000, 0x03fff).rw(m_vdp, FUNC(wswan_video_device::vram_r), FUNC(wswan_video_device::vram_w));       // 16kb RAM / 4 colour tiles
+	//map(0x00000, 0x03fff).rw(m_vdp, FUNC(wswan_video_device::vram_r), FUNC(wswan_video_device::vram_w));       // 16kb RAM / 4 colour tiles
+	map(0x00000, 0x03fff).r(m_vdp, FUNC(wswan_video_device::vram_r)).w(FUNC(wswan_state::vram_w));       // 16kb RAM / 4 colour tiles
 	map(0x04000, 0x0ffff).noprw();       // nothing
 	map(0xf0000, 0xfffff).r(FUNC(wswan_state::bios_r));
 }
@@ -185,7 +187,8 @@ void wswan_state::mem_map(address_map &map)
 
 void wscolor_state::mem_map(address_map &map)
 {
-	map(0x00000, 0x0ffff).rw(m_vdp, FUNC(wswan_video_device::vram_r), FUNC(wswan_video_device::vram_w));       // 16kb RAM / 4 colour tiles, 16 colour tiles + palettes
+	//map(0x00000, 0x0ffff).rw(m_vdp, FUNC(wswan_video_device::vram_r), FUNC(wswan_video_device::vram_w));       // 16kb RAM / 4 colour tiles, 16 colour tiles + palettes
+	map(0x00000, 0x0ffff).r(m_vdp, FUNC(wswan_video_device::vram_r)).w(FUNC(wscolor_state::vram_w));       // 16kb RAM / 4 colour tiles, 16 colour tiles + palettes
 	map(0xf0000, 0xfffff).r(FUNC(wscolor_state::bios_r));
 }
 
@@ -908,6 +911,12 @@ void wswan_state::port_w(offs_t offset, u16 data, u16 mem_mask)
 
 	// Update the port value
 	COMBINE_DATA(&m_ws_portram[offset]);
+}
+
+void wswan_state::vram_w(offs_t offset, u16 data, u16 mem_mask)
+{
+	m_vdp->vram_w(offset, data, mem_mask);
+	m_sound->vram_w(offset, data, mem_mask);	// for VGM logging
 }
 
 

@@ -87,6 +87,7 @@ protected:
 
 	int m_sample_rate;
 	sound_stream *m_stream;
+	VGMDeviceLog* m_vgm_log;
 	/* internal buffers */
 	std::unique_ptr<s16[]> m_mixer_buffer_left;
 	std::unique_ptr<s16[]> m_mixer_buffer_right;

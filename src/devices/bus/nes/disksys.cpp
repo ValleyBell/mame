@@ -22,6 +22,7 @@
 #include "imagedev/flopdrv.h"
 #include "formats/nes_dsk.h"
 #include "speaker.h"
+#include "vgmwrite.hpp"
 
 #ifdef NES_PCB_DEBUG
 #define VERBOSE (LOG_GENERAL)
@@ -164,6 +165,9 @@ void nes_disksys_device::pcb_reset()
 
 	m_fds_count = 0;
 	m_fds_last_side = 0;
+
+	m_vgm_log = machine().vgm_logger().GetChip(VGMC_NESAPU, 0);
+	m_vgm_log->SetProperty(0x00, 0x01);	// enable FDS mode
 }
 
 
@@ -224,6 +228,22 @@ void nes_disksys_device::hblank_irq(int scanline, bool vblank, bool blanked)
 void nes_disksys_device::write_ex(offs_t offset, uint8_t data)
 {
 	LOG("Famicom Disk System write_ex, offset: %04x, data: %02x\n", offset, data);
+
+	if (offset >= 0x20 && offset < 0x60)
+	{
+		m_vgm_log->Write(0x00, offset + 0x20, data);	// 40..7F
+		//logerror("VGMLog FDS: Wave - ofs %02X = %02X\n", offset + 0x20, data);
+	}
+	else if (offset >= 0x60 && offset < 0x7F)
+	{
+		m_vgm_log->Write(0x00, offset - 0x40, data);	// 20..3E
+		//logerror("VGMLog FDS: Write - ofs %02X = %02X\n", offset - 0x40, data);
+	}
+	else if (offset == 0x03)
+	{
+		m_vgm_log->Write(0x00, 0x3F, data);
+		//logerror("VGMLog FDS: Enable - ofs %02X = %02X\n", 0x3F, data);
+	}
 
 	if (offset >= 0x20 && offset < 0x60)
 	{

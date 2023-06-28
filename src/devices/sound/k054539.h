@@ -99,6 +99,8 @@ private:
 	channel channels[8];
 	sound_stream *stream;
 
+	VGMDeviceLog* m_vgm_log;
+
 	emu_timer          *m_timer;
 	uint32_t             m_timer_state;
 	devcb_write_line   m_timer_handler;

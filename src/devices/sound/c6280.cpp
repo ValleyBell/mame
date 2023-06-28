@@ -38,6 +38,7 @@
 */
 
 #include "emu.h"
+#include "vgmwrite.hpp"
 #include "c6280.h"
 
 #include <algorithm>
@@ -220,6 +221,8 @@ void c6280_device::c6280_w(offs_t offset, uint8_t data)
 	/* Update stream */
 	m_stream->update();
 
+	m_vgm_log->Write(0x00, offset, data);
+
 	switch (offset & 0x0f)
 	{
 		case 0x00: /* Channel select */
@@ -295,6 +298,7 @@ DEFINE_DEVICE_TYPE(C6280, c6280_device, "c6280", "Hudson Soft HuC6280 PSG")
 c6280_device::c6280_device(const machine_config &mconfig, const char *tag, device_t *owner, u32 clock)
 	: device_t(mconfig, C6280, tag, owner, clock)
 	, device_sound_interface(mconfig, *this)
+	, m_vgm_log(VGMLogger::GetDummyChip())
 {
 }
 
@@ -320,6 +324,8 @@ void c6280_device::device_start()
 	memset(m_channel, 0, sizeof(channel) * 8);
 
 	m_stream = stream_alloc(0, 2, clock());
+
+	m_vgm_log = machine().vgm_logger().OpenDevice(VGMC_C6280, clock());
 
 	/* Make volume table */
 	/* PSG has 48dB volume range spread over 32 steps */

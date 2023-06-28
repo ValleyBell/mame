@@ -24,6 +24,7 @@ protected:
 
 private:
 	sound_stream *m_channel;
+	VGMDeviceLog* m_vgm_log;
 	int m_sample_rate;
 	int m_vol_table[16];    /* volume table         */
 	int32_t m_register[16];   /* registers */

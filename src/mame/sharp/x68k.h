@@ -255,6 +255,8 @@ protected:
 	uint16_t sram_r(offs_t offset);
 	void vid_w(offs_t offset, uint16_t data, uint16_t mem_mask = ~0);
 	uint16_t vid_r(offs_t offset);
+	void dma_w(offs_t offset, uint16_t data, uint16_t mem_mask = ~0);
+	uint16_t dma_r(offs_t offset);
 	uint16_t areaset_r();
 	void areaset_w(uint16_t data);
 	void enh_areaset_w(offs_t offset, uint16_t data);

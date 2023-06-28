@@ -33,6 +33,7 @@
 #include "machine/nvram.h"
 
 #include "softlist.h"
+#include "vgmwrite.hpp"
 
 
 namespace {
@@ -103,6 +104,9 @@ public:
 	bool m_has_text_bus;
 	bool m_has_ymrom_bus;
 	bool m_has_z80_bus;
+
+	uint32_t m_pcmt_addr_start;	// PCM transfer variables
+	uint32_t m_pcmt_addr_end;
 
 	int get_irq_vector_ack(void) { return m_irq_vector_ack; }
 	void set_irq_vector_ack(int val) { m_irq_vector_ack = val; }
@@ -283,6 +287,8 @@ void ngcd_state::control_w(address_space &space, offs_t offset, uint16_t data, u
 		case 0x0122:
 //          bprintf(PRINT_NORMAL, _T("  - NGCD PCM BUSREQ -> 1 (PC: 0x%06X) %x\n"), SekGetPC(-1), byteValue);
 			m_has_ymrom_bus = false;
+			m_pcmt_addr_start = 0xFFFFFFFF;
+			m_pcmt_addr_end = 0xFFFFFFFF;
 			break;
 		case 0x0126:
 //          bprintf(PRINT_NORMAL, _T("  - NGCD Z80 BUSREQ -> 1 (PC: 0x%06X)\n"), SekGetPC(-1));
@@ -302,6 +308,17 @@ void ngcd_state::control_w(address_space &space, offs_t offset, uint16_t data, u
 		case 0x0142:
 //          bprintf(PRINT_NORMAL, _T("  - NGCD PCM BUSREQ -> 0 (PC: 0x%06X)\n"), SekGetPC(-1));
 			m_has_ymrom_bus = true;
+			if (m_ym->get_vgmlog_dev())
+			{
+				uint32_t RAMSize;
+				void* RAMData;
+				uint32_t DataLen;
+
+				RAMSize = memregion("adpcm_ram")->bytes();
+				RAMData = m_adpcm_ram;
+				DataLen = m_pcmt_addr_end + 1 - m_pcmt_addr_start;
+				m_ym->get_vgmlog_dev()->WriteLargeData(0x01, RAMSize, m_pcmt_addr_start, DataLen, RAMData);
+			}
 			break;
 		case 0x0146:
 //          bprintf(PRINT_NORMAL, _T("  - NGCD Z80 BUSREQ -> 0 (PC: 0x%06X)\n"), SekGetPC(-1));
@@ -459,6 +476,10 @@ void ngcd_state::transfer_w(offs_t offset, uint8_t data)
 			break;
 		case 1:                         // ADPCM
 			m_adpcm_ram[m_adpcm_transfer_bank + ((sekAddress & 0x0FFFFF) >> 1)] = byteValue;
+
+			m_pcmt_addr_end = m_adpcm_transfer_bank + ((sekAddress & 0x0FFFFF) >> 1);
+			if (m_pcmt_addr_start == 0xFFFFFFFF)
+				m_pcmt_addr_start = m_pcmt_addr_end;
 			break;
 		case 4:                         // Z80
 
@@ -869,6 +890,9 @@ void ngcd_state::machine_start()
 void ngcd_state::machine_reset()
 {
 	aes_base_state::machine_reset();
+
+	m_pcmt_addr_start = 0xFFFFFFFF;
+	m_pcmt_addr_end = 0xFFFFFFFF;
 
 	m_tempcdc->NeoCDCommsReset();
 

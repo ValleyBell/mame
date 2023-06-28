@@ -32,6 +32,7 @@ public:
 protected:
 	// device-level overrides
 	virtual void device_start() override;
+	virtual void device_reset() override;
 	virtual const tiny_rom_entry *device_rom_region() const override;
 	virtual void device_add_mconfig(machine_config &config) override;
 
@@ -47,6 +48,9 @@ private:
 	void oki1_bankswitch_w(uint8_t data);
 	uint8_t tonmk004_r();
 	void tomain_w(uint8_t data);
+
+	VGMDeviceLog* m_vgm_log0;
+	VGMDeviceLog* m_vgm_log1;
 };
 
 DECLARE_DEVICE_TYPE(NMK004, nmk004_device)

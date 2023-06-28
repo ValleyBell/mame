@@ -41,6 +41,7 @@ Revisions:
 *********************************************************/
 
 #include "emu.h"
+#include "vgmwrite.hpp"
 #include "iremga20.h"
 
 #include <algorithm>
@@ -62,7 +63,8 @@ iremga20_device::iremga20_device(const machine_config &mconfig, const char *tag,
 	device_t(mconfig, IREMGA20, tag, owner, clock),
 	device_sound_interface(mconfig, *this),
 	device_rom_interface(mconfig, *this),
-	m_stream(nullptr)
+	m_stream(nullptr),
+	m_vgm_log(VGMLogger::GetDummyChip())
 {
 }
 
@@ -74,6 +76,9 @@ iremga20_device::iremga20_device(const machine_config &mconfig, const char *tag,
 void iremga20_device::device_start()
 {
 	m_stream = stream_alloc(0, 2, clock()/4);
+
+	m_vgm_log = machine().vgm_logger().OpenDevice(VGMC_GA20, clock());
+	m_vgm_log->DumpSampleROM(0x01, memregion(DEVICE_SELF));
 
 	save_item(NAME(m_regs));
 	for (int i = 0; i < 4; i++)
@@ -168,6 +173,7 @@ void iremga20_device::write(offs_t offset, uint8_t data)
 {
 	m_stream->update();
 
+	m_vgm_log->Write(0x00, offset, data);
 	offset &= 0x1f;
 	m_regs[offset] = data;
 	int ch = offset >> 3;

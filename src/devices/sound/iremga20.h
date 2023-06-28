@@ -55,6 +55,7 @@ private:
 	sound_stream *m_stream;
 	uint8_t m_regs[0x20];
 	channel_def m_channel[4];
+	VGMDeviceLog* m_vgm_log;
 };
 
 DECLARE_DEVICE_TYPE(IREMGA20, iremga20_device)

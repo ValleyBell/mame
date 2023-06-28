@@ -116,6 +116,7 @@
 */
 
 #include "emu.h"
+#include "vgmwrite.hpp"
 #include "x68k.h"
 #include "x68k_hdc.h"
 #include "x68k_kbd.h"
@@ -345,10 +346,12 @@ void x68k_state::ppi_port_c_w(uint8_t data)
 			LOGMASKED(LOG_SYS, "PPI: Invalid ADPCM sample rate set.\n");
 
 		set_adpcm();
-		m_okim6258->set_divider(m_adpcm.rate);
+		//m_okim6258->set_divider(m_adpcm.rate);
 		m_adpcm_out[0]->flt_volume_set_volume((m_adpcm.pan & 1) ? 0.0f : 1.0f);
 		m_adpcm_out[1]->flt_volume_set_volume((m_adpcm.pan & 2) ? 0.0f : 1.0f);
 	}
+	m_okim6258->get_vgmlog_dev()->Write(0x00, 0x02, m_adpcm.pan);
+	m_okim6258->set_divider(m_adpcm.rate);	// write always, for proper VGM logging
 
 	// Set joystick outputs
 	if(BIT(data, 6) != BIT(m_ppi_portc, 6))
@@ -680,6 +683,46 @@ uint16_t x68k_state::vid_r(offs_t offset)
 	return 0xff;
 }
 
+void x68k_state::dma_w(offs_t offset, uint16_t data, uint16_t mem_mask)
+{
+	int channel = (offset & 0x60) >> 5;
+	int reg = offset & 0x1f;
+	if (channel == 3 && m_okim6258->get_vgmlog_dev() != nullptr)	// log a few ADPCM commands to VGM
+	{
+		switch(reg)
+		{
+		case 0x03:  // SCR / CCR
+			if (ACCESSING_BITS_0_7)
+				m_okim6258->get_vgmlog_dev()->Write(0x00, 0x17, data & 0x00ff);	// log Control Write
+			break;
+		case 0x05:  // Memory Transfer Counter
+			if (ACCESSING_BITS_8_15)
+				m_okim6258->get_vgmlog_dev()->Write(0x00, 0x14, (data & 0xff00) >> 8);
+			if (ACCESSING_BITS_0_7)
+				m_okim6258->get_vgmlog_dev()->Write(0x00, 0x15, data & 0x00ff);
+			break;
+		case 0x06:  // Memory Address Register (high)
+			if (ACCESSING_BITS_8_15)
+				m_okim6258->get_vgmlog_dev()->Write(0x00, 0x10, (data & 0xff00) >> 8);
+			if (ACCESSING_BITS_0_7)
+				m_okim6258->get_vgmlog_dev()->Write(0x00, 0x11, data & 0x00ff);
+			break;
+		case 0x07:  // Memory Address Register (low)
+			if (ACCESSING_BITS_8_15)
+				m_okim6258->get_vgmlog_dev()->Write(0x00, 0x12, (data & 0xff00) >> 8);
+			if (ACCESSING_BITS_0_7)
+				m_okim6258->get_vgmlog_dev()->Write(0x00, 0x13, data & 0x00ff);
+			break;
+		}
+	}
+	m_hd63450->write(offset, data, mem_mask);
+}
+
+uint16_t x68k_state::dma_r(offs_t offset)
+{
+	return m_hd63450->read(offset);
+}
+
 uint16_t x68k_state::areaset_r()
 {
 	// register is write-only
@@ -993,7 +1036,8 @@ void x68k_state::x68k_base_map(address_map &map)
 	map(0xe00000, 0xe7ffff).rw(m_crtc, FUNC(x68k_crtc_device::tvram_r), FUNC(x68k_crtc_device::tvram_w));
 	map(0xe80000, 0xe81fff).rw(m_crtc, FUNC(x68k_crtc_device::crtc_r), FUNC(x68k_crtc_device::crtc_w));
 	map(0xe82400, 0xe83fff).rw(FUNC(x68k_state::vid_r), FUNC(x68k_state::vid_w));
-	map(0xe84000, 0xe85fff).rw(m_hd63450, FUNC(hd63450_device::read), FUNC(hd63450_device::write));
+	//map(0xe84000, 0xe85fff).rw(m_hd63450, FUNC(hd63450_device::read), FUNC(hd63450_device::write));
+	map(0xe84000, 0xe85fff).rw(FUNC(x68k_state::dma_r), FUNC(x68k_state::dma_w));
 	map(0xe86000, 0xe87fff).rw(FUNC(x68k_state::areaset_r), FUNC(x68k_state::areaset_w));
 	map(0xe88000, 0xe89fff).rw(m_mfpdev, FUNC(mc68901_device::read), FUNC(mc68901_device::write)).umask16(0x00ff);
 	map(0xe8a000, 0xe8bfff).rw(m_rtc, FUNC(rp5c15_device::read), FUNC(rp5c15_device::write)).umask16(0x00ff);

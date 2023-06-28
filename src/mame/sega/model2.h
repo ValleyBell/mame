@@ -212,6 +212,7 @@ protected:
 	void fbvram_bankB_w(offs_t offset, u16 data, u16 mem_mask = ~0);
 	void model2_3d_zclip_w(u32 data);
 	void model2snd_ctrl(u16 data);
+	void model2snd_mem_w(offs_t offset, u16 data, u16 mem_mask);
 	u8 tgpid_r(offs_t offset);
 	u32 polygon_count_r();
 

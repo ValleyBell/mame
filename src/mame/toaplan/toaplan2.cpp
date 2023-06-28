@@ -401,6 +401,7 @@ To reset the NVRAM in Othello Derby, hold P1 Button 1 down while booting.
 #include "sound/ymopm.h"
 #include "sound/ymopl.h"
 #include "sound/ymz280b.h"
+#include "vgmwrite.hpp"
 #include "speaker.h"
 
 
@@ -476,6 +477,10 @@ void toaplan2_state::init_fixeightbl()
 	u8 *ROM = memregion("oki1")->base();
 
 	m_okibank->configure_entries(0, 5, &ROM[0x30000], 0x10000);
+
+	m_okibank_vgm_log[0] = m_oki[0]->get_vgmlog_dev();
+	logerror("Toaplan OKI-Bank '%s': VGM DevPtr %p\n", m_oki_rom[0].finder_tag(), m_okibank_vgm_log[0]);
+	m_okibank_vgm_log[0]->Write(0x00, 0x0E, 0x01);	// TODO: make banking work properly
 }
 
 
@@ -511,6 +516,10 @@ void truxton2_state::install_raizing_okibank(int chip)
 	{
 		m_raizing_okibank[chip][i]->configure_entries(0, 16, &m_oki_rom[chip][0], 0x10000);
 	}
+
+	m_okibank_vgm_log[chip] = m_oki[chip]->get_vgmlog_dev();
+	logerror("Toaplan Raizing-OKI-Bank '%s': VGM DevPtr %p\n", m_oki_rom[chip].finder_tag(), m_okibank_vgm_log[chip]);
+	m_okibank_vgm_log[chip]->Write(0x00, 0x0E, 0x81);
 }
 
 void truxton2_state::init_bgaregga()
@@ -693,6 +702,10 @@ template<int Chip>
 void toaplan2_state::oki_bankswitch_w(u8 data)
 {
 	m_oki[Chip]->set_rom_bank(data & 1);
+
+	m_okibank_vgm_log[Chip] = m_oki[Chip]->get_vgmlog_dev();
+	logerror("Toaplan OKI-Bank Switch (%s)\n", m_oki_rom[Chip].finder_tag());
+	m_okibank_vgm_log[Chip]->Write(0x00, 0x0F, data & 1);
 }
 
 void toaplan2_state::fixeightbl_oki_bankswitch_w(u8 data)
@@ -720,10 +733,14 @@ void truxton2_state::raizing_z80_bankswitch_w(u8 data)
 
 void truxton2_state::raizing_oki_bankswitch_w(offs_t offset, u8 data)
 {
+	if (m_okibank_vgm_log[(offset & 4) >> 2] != nullptr)
+		m_okibank_vgm_log[(offset & 4) >> 2]->Write(0x00, 0x10 | (offset & 3), data & 0xf);
 	m_raizing_okibank[(offset & 4) >> 2][offset & 3]->set_entry(data & 0xf);
 	m_raizing_okibank[(offset & 4) >> 2][4 + (offset & 3)]->set_entry(data & 0xf);
 	offset++;
 	data >>= 4;
+	if (m_okibank_vgm_log[(offset & 4) >> 2] != nullptr)
+		m_okibank_vgm_log[(offset & 4) >> 2]->Write(0x00, 0x10 | (offset & 3), data & 0xf);
 	m_raizing_okibank[(offset & 4) >> 2][offset & 3]->set_entry(data & 0xf);
 	m_raizing_okibank[(offset & 4) >> 2][4 + (offset & 3)]->set_entry(data & 0xf);
 }
