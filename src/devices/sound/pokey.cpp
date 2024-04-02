@@ -84,6 +84,7 @@
  *****************************************************************************/
 
 #include "emu.h"
+#include "vgmwrite.hpp"
 #include "pokey.h"
 
 #include "debugger.h"
@@ -199,6 +200,7 @@ pokey_device::pokey_device(const machine_config &mconfig, const char *tag, devic
 	device_state_interface(mconfig, *this),
 	m_icount(0),
 	m_stream(nullptr),
+	m_vgm_log(VGMLogger::GetDummyChip()),
 	m_pot_r_cb(*this, 0),
 	m_allpot_r_cb(*this, 0),
 	m_serin_r_cb(*this, 0),
@@ -285,6 +287,8 @@ void pokey_device::device_start()
 	std::fill(std::begin(m_POTx), std::end(m_POTx), 0);
 
 	m_stream = stream_alloc(0, 1, clock());
+
+	m_vgm_log = machine().vgm_logger().OpenDevice(VGMC_POKEY, clock());
 
 	m_serout_ready_timer = timer_alloc(FUNC(pokey_device::serout_ready_irq), this);
 	m_serout_complete_timer = timer_alloc(FUNC(pokey_device::serout_complete_irq), this);
@@ -892,6 +896,7 @@ uint8_t pokey_device::read(offs_t offset)
 
 void pokey_device::write(offs_t offset, uint8_t data)
 {
+	m_vgm_log->Write(0x00, offset, data);
 	machine().scheduler().synchronize(timer_expired_delegate(FUNC(pokey_device::sync_write), this), (offset << 8) | data);
 }
 

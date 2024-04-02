@@ -106,6 +106,7 @@ private:
 
 	double m_master_clock;            /* master clock frequency */
 	sound_stream *m_stream;           /* which stream are we using */
+	VGMDeviceLog *m_vgm_log;
 	std::unique_ptr<s16[]> m_scratch;
 #if YMZ280B_MAKE_WAVS
 	void *m_wavresample;              /* resampled waveform */

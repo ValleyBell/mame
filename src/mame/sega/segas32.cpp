@@ -525,6 +525,7 @@ orunners:  Interleaved with the dj and << >> buttons is the data the drives the 
 ****************************************************************************/
 
 #include "emu.h"
+#include "vgmwrite.hpp"
 #include "segas32.h"
 
 #include "bus/nscsi/cd.h"
@@ -996,6 +997,9 @@ void segas32_state::sound_bank_hi_w(uint8_t data)
 
 void segas32_state::multipcm_bank_w(uint8_t data)
 {
+	VGMDeviceLog* vgmlog_dev = m_multipcm->get_vgmlog_dev();
+	vgmlog_dev->Write(0x00, 0x11, data & 7);
+	vgmlog_dev->Write(0x00, 0x12, (data >> 3) & 7);
 	m_multipcm_bank_hi->set_entry((data >> 3) & 7);
 	m_multipcm_bank_lo->set_entry(data & 7);
 }
@@ -1003,6 +1007,9 @@ void segas32_state::multipcm_bank_w(uint8_t data)
 
 void segas32_state::scross_bank_w(uint8_t data)
 {
+	VGMDeviceLog* vgmlog_dev = m_multipcm->get_vgmlog_dev();
+	vgmlog_dev->Write(0x00, 0x11, data & 7);
+	vgmlog_dev->Write(0x00, 0x12, data & 7);
 	m_multipcm_bank_hi->set_entry(data & 7);
 	m_multipcm_bank_lo->set_entry(data & 7);
 }

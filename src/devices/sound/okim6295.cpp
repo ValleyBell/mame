@@ -43,6 +43,7 @@
 ***************************************************************************/
 
 #include "emu.h"
+#include "vgmwrite.hpp"
 #include "okim6295.h"
 
 
@@ -92,7 +93,8 @@ okim6295_device::okim6295_device(const machine_config &mconfig, const char *tag,
 	m_region(*this, DEVICE_SELF),
 	m_command(-1),
 	m_stream(nullptr),
-	m_pin7_state(~uint8_t(0))
+	m_pin7_state(~uint8_t(0)),
+	m_vgm_log(VGMLogger::GetDummyChip())
 {
 }
 
@@ -119,6 +121,10 @@ void okim6295_device::device_start()
 	// create the stream
 	int divisor = m_pin7_state ? 132 : 165;
 	m_stream = stream_alloc(0, 1, clock() / divisor);
+
+	m_vgm_log = machine().vgm_logger().OpenDevice(VGMC_OKIM6295, clock());
+	m_vgm_log->SetProperty(0x00, m_pin7_state);
+	m_vgm_log->DumpSampleROM(0x01, m_region);
 
 	save_item(NAME(m_command));
 	save_item(NAME(m_pin7_state));
@@ -166,6 +172,13 @@ void okim6295_device::device_post_load()
 void okim6295_device::device_clock_changed()
 {
 	int divisor = m_pin7_state ? 132 : 165;
+	uint32_t val = clock();
+
+	m_vgm_log->Write(0x00, 0x08, (val >>  0) & 0xFF);
+	m_vgm_log->Write(0x00, 0x09, (val >>  8) & 0xFF);
+	m_vgm_log->Write(0x00, 0x0A, (val >> 16) & 0xFF);
+	m_vgm_log->Write(0x00, 0x0B, (val >> 24) & 0xFF);
+
 	m_stream->set_sample_rate(clock() / divisor);
 }
 
@@ -189,6 +202,14 @@ void okim6295_device::sound_stream_update(sound_stream &stream, std::vector<read
 }
 
 
+void okim6295_device::set_rom_bank(int bank)
+{
+	// let's just hope overriding works properly for all drivers
+	device_rom_interface::set_rom_bank(bank);
+	m_vgm_log->Write(0x00, 0x0F, bank & 0xFF);
+}
+
+
 //-------------------------------------------------
 //  rom_bank_pre_change - refresh the stream if the
 //  ROM banking changes
@@ -209,6 +230,7 @@ void okim6295_device::set_pin7(int pin7)
 {
 	assert(started());
 	m_pin7_state = pin7 ? 1 : 0;
+	m_vgm_log->Write(0x00, 0x0C, m_pin7_state);
 	device_clock_changed();
 }
 
@@ -237,6 +259,8 @@ uint8_t okim6295_device::read()
 
 void okim6295_device::write(uint8_t command)
 {
+	m_vgm_log->Write(0x00, 0x00, command);
+
 	// if a command is pending, process the second half
 	if (m_command != -1)
 	{

@@ -9,6 +9,7 @@
 ***************************************************************************/
 
 #include "emu.h"
+#include "vgmwrite.hpp"
 #include "segam1audio.h"
 
 #include "machine/clock.h"
@@ -125,11 +126,17 @@ void segam1audio_device::device_reset()
 
 void segam1audio_device::m1_snd_mpcm_bnk1_w(uint16_t data)
 {
+	auto vgmdev = m_multipcm_1->get_vgmlog_dev();
+	if (vgmdev)
+		vgmdev->Write(0x00, 0x10, data & 3);
 	m_mpcmbank1->set_entry(data & 3);
 }
 
 void segam1audio_device::m1_snd_mpcm_bnk2_w(uint16_t data)
 {
+	auto vgmdev = m_multipcm_2->get_vgmlog_dev();
+	if (vgmdev)
+		vgmdev->Write(0x00, 0x10, data & 3);
 	m_mpcmbank2->set_entry(data & 3);
 }
 

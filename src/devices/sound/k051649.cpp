@@ -33,6 +33,7 @@
 *******************************************************************************/
 
 #include "emu.h"
+#include "vgmwrite.hpp"
 #include "k051649.h"
 #include <algorithm>
 
@@ -62,6 +63,7 @@ k051649_device::k051649_device(const machine_config &mconfig, const char *tag, d
 	, device_sound_interface(mconfig, *this)
 	, m_stream(nullptr)
 	, m_test(0)
+	, m_vgm_log(VGMLogger::GetDummyChip())
 {
 }
 
@@ -74,6 +76,8 @@ void k051649_device::device_start()
 {
 	// get stream channels
 	m_stream = stream_alloc(0, 1, clock());
+
+	m_vgm_log = machine().vgm_logger().OpenDevice(VGMC_K051649, clock() / 2);
 
 	// save states
 	save_item(STRUCT_MEMBER(m_channel_list, counter));
@@ -168,6 +172,8 @@ void k051649_device::sound_stream_update(sound_stream &stream, std::vector<read_
 
 void k051649_device::k051649_waveform_w(offs_t offset, u8 data)
 {
+	m_vgm_log->Write(0x00, offset, data);
+
 	// waveram is read-only?
 	if (m_test & 0x40 || (m_test & 0x80 && offset >= 0x60))
 		return;
@@ -205,6 +211,8 @@ u8 k051649_device::k051649_waveform_r(offs_t offset)
 
 void k051649_device::k052539_waveform_w(offs_t offset, u8 data)
 {
+	m_vgm_log->Write(0x04, offset, data);
+
 	// waveram is read-only?
 	if (m_test & 0x40)
 		return;
@@ -231,6 +239,7 @@ u8 k051649_device::k052539_waveform_r(offs_t offset)
 void k051649_device::k051649_volume_w(offs_t offset, u8 data)
 {
 	m_stream->update();
+	m_vgm_log->Write(0x02, offset, data);
 	m_channel_list[offset].volume = data & 0xf;
 }
 
@@ -238,6 +247,7 @@ void k051649_device::k051649_volume_w(offs_t offset, u8 data)
 void k051649_device::k051649_frequency_w(offs_t offset, u8 data)
 {
 	const int freq_hi = offset & 1;
+	m_vgm_log->Write(0x01, offset, data);
 	offset >>= 1;
 
 	m_stream->update();
@@ -261,6 +271,8 @@ void k051649_device::k051649_keyonoff_w(u8 data)
 {
 	m_stream->update();
 
+	m_vgm_log->Write(0x03, 0, data);
+
 	for (int i = 0; i < 5; i++)
 	{
 		m_channel_list[i].key = BIT(data, i);
@@ -270,6 +282,7 @@ void k051649_device::k051649_keyonoff_w(u8 data)
 
 void k051649_device::k051649_test_w(u8 data)
 {
+	m_vgm_log->Write(0x05, 0, data);
 	m_test = data;
 }
 

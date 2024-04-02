@@ -2,6 +2,7 @@
 // copyright-holders:Aaron Giles
 
 #include "emu.h"
+#include "vgmwrite.hpp"
 #include "ymopl.h"
 
 
@@ -16,8 +17,37 @@ DEFINE_DEVICE_TYPE(YM3526, ym3526_device, "ym3526", "YM3526 OPL")
 //-------------------------------------------------
 
 ym3526_device::ym3526_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock) :
-	ymfm_device_base<ymfm::ym3526>(mconfig, tag, owner, clock, YM3526)
+	ymfm_device_base<ymfm::ym3526>(mconfig, tag, owner, clock, YM3526),
+	m_vgm_log(VGMLogger::GetDummyChip())
 {
+}
+
+void ym3526_device::device_start()
+{
+	parent::device_start();
+
+	m_vgm_log = machine().vgm_logger().OpenDevice(VGMC_YM3526, clock());
+}
+
+void ym3526_device::write(offs_t offset, u8 data)
+{
+	parent::write(offset, data);
+	if (offset & 0x01)
+		m_vgm_log->Write(offset >> 1, m_reg, data);
+	else
+		m_reg = data;
+}
+
+void ym3526_device::address_w(u8 data)
+{
+	parent::address_w(data);
+	m_reg = data;
+}
+
+void ym3526_device::data_w(u8 data)
+{
+	parent::data_w(data);
+	m_vgm_log->Write(0, m_reg, data);
 }
 
 
@@ -34,8 +64,50 @@ DEFINE_DEVICE_TYPE(Y8950, y8950_device, "y8950", "Y8950 OPL MSX-Audio")
 
 y8950_device::y8950_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock) :
 	ymfm_device_base<ymfm::y8950>(mconfig, tag, owner, clock, Y8950),
-	device_rom_interface(mconfig, *this)
+	device_rom_interface(mconfig, *this),
+	m_vgm_log(VGMLogger::GetDummyChip())
 {
+}
+
+void y8950_device::device_start()
+{
+	parent::device_start();
+
+	m_vgm_log = machine().vgm_logger().OpenDevice(VGMC_Y8950, clock());
+	if (memregion(DEVICE_SELF) != nullptr)
+	{
+		m_vgm_log->DumpSampleROM(0x01, memregion(DEVICE_SELF));
+	}
+	else
+	{
+		logerror("ROM Tag: %s\n", get_device_rom_name());
+		auto memreg = get_device_rom();
+		if (memreg != nullptr)
+			m_vgm_log->DumpSampleROM(0x01, memreg);
+		else
+			m_vgm_log->DumpSampleROM(0x01, space());
+	}
+}
+
+void y8950_device::write(offs_t offset, u8 data)
+{
+	parent::write(offset, data);
+	if (offset & 0x01)
+		m_vgm_log->Write(offset >> 1, m_reg, data);
+	else
+		m_reg = data;
+}
+
+void y8950_device::address_w(u8 data)
+{
+	parent::address_w(data);
+	m_reg = data;
+}
+
+void y8950_device::data_w(u8 data)
+{
+	parent::data_w(data);
+	m_vgm_log->Write(0, m_reg, data);
 }
 
 
@@ -90,8 +162,37 @@ DEFINE_DEVICE_TYPE(YM3812, ym3812_device, "ym3812", "YM3812 OPL2")
 //-------------------------------------------------
 
 ym3812_device::ym3812_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock) :
-	ymfm_device_base<ymfm::ym3812>(mconfig, tag, owner, clock, YM3812)
+	ymfm_device_base<ymfm::ym3812>(mconfig, tag, owner, clock, YM3812),
+	m_vgm_log(VGMLogger::GetDummyChip())
 {
+}
+
+void ym3812_device::device_start()
+{
+	parent::device_start();
+
+	m_vgm_log = machine().vgm_logger().OpenDevice(VGMC_YM3812, clock());
+}
+
+void ym3812_device::write(offs_t offset, u8 data)
+{
+	parent::write(offset, data);
+	if (offset & 0x01)
+		m_vgm_log->Write(offset >> 1, m_reg, data);
+	else
+		m_reg = data;
+}
+
+void ym3812_device::address_w(u8 data)
+{
+	parent::address_w(data);
+	m_reg = data;
+}
+
+void ym3812_device::data_w(u8 data)
+{
+	parent::data_w(data);
+	m_vgm_log->Write(0, m_reg, data);
 }
 
 
@@ -107,8 +208,56 @@ DEFINE_DEVICE_TYPE(YMF262, ymf262_device, "ymf262", "YMF262 OPL3")
 //-------------------------------------------------
 
 ymf262_device::ymf262_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock) :
-	ymfm_device_base<ymfm::ymf262>(mconfig, tag, owner, clock, YMF262)
+	ymfm_device_base<ymfm::ymf262>(mconfig, tag, owner, clock, YMF262),
+	m_vgm_log(VGMLogger::GetDummyChip())
 {
+}
+
+void ymf262_device::device_start()
+{
+	parent::device_start();
+
+	m_vgm_log = machine().vgm_logger().OpenDevice(VGMC_YMF262, clock());
+}
+
+void ymf262_device::write(offs_t offset, u8 data)
+{
+	parent::write(offset, data);
+	if (offset & 0x01)
+	{
+		m_vgm_log->Write(m_port, m_reg, data);
+	}
+	else
+	{
+		m_port = offset >> 1;
+		m_reg = data;
+	}
+}
+
+void ymf262_device::address_w(u8 data)
+{
+	parent::address_w(data);
+	m_port = 0;
+	m_reg = data;
+}
+
+void ymf262_device::data_w(u8 data)
+{
+	parent::data_w(data);
+	m_vgm_log->Write(m_port, m_reg, data);
+}
+
+void ymf262_device::address_hi_w(u8 data)
+{
+	update_streams().write_address_hi(data);
+	m_port = 1;
+	m_reg = data;
+}
+
+void ymf262_device::data_hi_w(u8 data)
+{
+	update_streams().write_data(data);
+	m_vgm_log->Write(m_port, m_reg, data);
 }
 
 
@@ -125,8 +274,92 @@ DEFINE_DEVICE_TYPE(YMF278B, ymf278b_device, "ymf278b", "YMF278B OPL4")
 
 ymf278b_device::ymf278b_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock) :
 	ymfm_device_base<ymfm::ymf278b>(mconfig, tag, owner, clock, YMF278B),
-	device_rom_interface(mconfig, *this)
+	device_rom_interface(mconfig, *this),
+	m_vgm_log(VGMLogger::GetDummyChip())
 {
+}
+
+void ymf278b_device::device_start()
+{
+	parent::device_start();
+
+	m_vgm_log = machine().vgm_logger().OpenDevice(VGMC_YMF278B, clock());
+	if (memregion(DEVICE_SELF) != nullptr)
+	{
+		m_vgm_log->DumpSampleROM(0x01, memregion(DEVICE_SELF));
+	}
+	else
+	{
+		logerror("ROM Tag: %s\n", get_device_rom_name());
+		auto memreg = get_device_rom();
+		if (memreg != nullptr)
+			m_vgm_log->DumpSampleROM(0x01, memreg);
+		else
+			m_vgm_log->DumpSampleROM(0x01, space());
+	}
+}
+
+void ymf278b_device::write(offs_t offset, u8 data)
+{
+	parent::write(offset, data);
+	u8 addr = (u8)(offset >> 1);
+	if (offset & 0x01)
+	{
+		if (addr < 2)
+			m_vgm_log->Write(m_fm_port, m_fm_reg, data);
+		else
+			m_vgm_log->Write(addr, m_pcm_reg, data);
+	}
+	else
+	{
+		if (addr < 2)
+		{
+			m_fm_port = addr;
+			m_fm_reg = data;
+		}
+		else
+		{
+			m_pcm_reg = data;
+		}
+	}
+}
+
+void ymf278b_device::address_w(u8 data)
+{
+	parent::address_w(data);
+	m_fm_port = 0;
+	m_fm_reg = data;
+}
+
+void ymf278b_device::data_w(u8 data)
+{
+	parent::data_w(data);
+	m_vgm_log->Write(m_fm_port, m_fm_reg, data);
+}
+
+void ymf278b_device::address_hi_w(u8 data)
+{
+	update_streams().write_address_hi(data);
+	m_fm_port = 1;
+	m_fm_reg = data;
+}
+
+void ymf278b_device::data_hi_w(u8 data)
+{
+	update_streams().write_data(data);
+	m_vgm_log->Write(m_fm_port, m_fm_reg, data);
+}
+
+void ymf278b_device::address_pcm_w(u8 data)
+{
+	update_streams().write_address_pcm(data);
+	m_pcm_reg = data;
+}
+
+void ymf278b_device::data_pcm_w(u8 data)
+{
+	update_streams().write_data_pcm(data);
+	m_vgm_log->Write(2, m_pcm_reg, data);
 }
 
 
@@ -194,7 +427,8 @@ DEFINE_DEVICE_TYPE(YM2413, ym2413_device, "ym2413", "YM2413 OPLL")
 
 ym2413_device::ym2413_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock) :
 	ymfm_device_base<ymfm::ym2413>(mconfig, tag, owner, clock, YM2413),
-	m_internal(*this, "internal")
+	m_internal(*this, "internal"),
+	m_vgm_log(VGMLogger::GetDummyChip())
 {
 }
 
@@ -207,6 +441,30 @@ void ym2413_device::device_start()
 {
 	parent::device_start();
 	m_chip.set_instrument_data(m_internal);
+
+	m_vgm_log = machine().vgm_logger().OpenDevice(VGMC_YM2413, clock());
+	m_vgm_log->SetProperty(0x00, 0x00);	// YM2413 mode
+}
+
+void ym2413_device::write(offs_t offset, u8 data)
+{
+	parent::write(offset, data);
+	if (offset & 0x01)
+		m_vgm_log->Write(offset >> 1, m_reg, data);
+	else
+		m_reg = data;
+}
+
+void ym2413_device::address_w(u8 data)
+{
+	parent::address_w(data);
+	m_reg = data;
+}
+
+void ym2413_device::data_w(u8 data)
+{
+	parent::data_w(data);
+	m_vgm_log->Write(0, m_reg, data);
 }
 
 
@@ -242,7 +500,8 @@ DEFINE_DEVICE_TYPE(YM2423, ym2423_device, "ym2423", "YM2423 OPLL-X")
 
 ym2423_device::ym2423_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock) :
 	ymfm_device_base<ymfm::ym2423>(mconfig, tag, owner, clock, YM2423),
-	m_internal(*this, "internal")
+	m_internal(*this, "internal"),
+	m_vgm_log(VGMLogger::GetDummyChip())
 {
 }
 
@@ -255,6 +514,30 @@ void ym2423_device::device_start()
 {
 	parent::device_start();
 	m_chip.set_instrument_data(m_internal);
+
+	m_vgm_log = machine().vgm_logger().OpenDevice(VGMC_YM2413, clock());
+	m_vgm_log->SetProperty(0x00, 0x00);	// YM2413 mode
+}
+
+void ym2423_device::write(offs_t offset, u8 data)
+{
+	parent::write(offset, data);
+	if (offset & 0x01)
+		m_vgm_log->Write(offset >> 1, m_reg, data);
+	else
+		m_reg = data;
+}
+
+void ym2423_device::address_w(u8 data)
+{
+	parent::address_w(data);
+	m_reg = data;
+}
+
+void ym2423_device::data_w(u8 data)
+{
+	parent::data_w(data);
+	m_vgm_log->Write(0, m_reg, data);
 }
 
 
@@ -290,7 +573,8 @@ DEFINE_DEVICE_TYPE(YMF281, ymf281_device, "ymf281", "YMF281 OPLLP")
 
 ymf281_device::ymf281_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock) :
 	ymfm_device_base<ymfm::ymf281>(mconfig, tag, owner, clock, YMF281),
-	m_internal(*this, "internal")
+	m_internal(*this, "internal"),
+	m_vgm_log(VGMLogger::GetDummyChip())
 {
 }
 
@@ -303,6 +587,30 @@ void ymf281_device::device_start()
 {
 	parent::device_start();
 	m_chip.set_instrument_data(m_internal);
+
+	m_vgm_log = machine().vgm_logger().OpenDevice(VGMC_YM2413, clock());
+	m_vgm_log->SetProperty(0x00, 0x00);	// YM2413 mode
+}
+
+void ymf281_device::write(offs_t offset, u8 data)
+{
+	parent::write(offset, data);
+	if (offset & 0x01)
+		m_vgm_log->Write(offset >> 1, m_reg, data);
+	else
+		m_reg = data;
+}
+
+void ymf281_device::address_w(u8 data)
+{
+	parent::address_w(data);
+	m_reg = data;
+}
+
+void ymf281_device::data_w(u8 data)
+{
+	parent::data_w(data);
+	m_vgm_log->Write(0, m_reg, data);
 }
 
 
@@ -338,7 +646,8 @@ DEFINE_DEVICE_TYPE(DS1001, ds1001_device, "ds1001", "Yamaha DS1001 / Konami 0539
 
 ds1001_device::ds1001_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock) :
 	ymfm_device_base<ymfm::ds1001>(mconfig, tag, owner, clock, DS1001),
-	m_internal(*this, "internal")
+	m_internal(*this, "internal"),
+	m_vgm_log(VGMLogger::GetDummyChip())
 {
 }
 
@@ -351,6 +660,30 @@ void ds1001_device::device_start()
 {
 	parent::device_start();
 	m_chip.set_instrument_data(m_internal);
+
+	m_vgm_log = machine().vgm_logger().OpenDevice(VGMC_YM2413, clock());
+	m_vgm_log->SetProperty(0x00, 0x01);	// VRC-7 mode
+}
+
+void ds1001_device::write(offs_t offset, u8 data)
+{
+	parent::write(offset, data);
+	if (offset & 0x01)
+		m_vgm_log->Write(offset >> 1, m_reg, data);
+	else
+		m_reg = data;
+}
+
+void ds1001_device::address_w(u8 data)
+{
+	parent::address_w(data);
+	m_reg = data;
+}
+
+void ds1001_device::data_w(u8 data)
+{
+	parent::data_w(data);
+	m_vgm_log->Write(0, m_reg, data);
 }
 
 

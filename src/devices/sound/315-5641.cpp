@@ -3,6 +3,7 @@
 /* Sega 315-5641 / D77591 / 9442CA010 */
 
 #include "emu.h"
+#include "vgmwrite.hpp"
 #include "315-5641.h"
 
 DEFINE_DEVICE_TYPE(SEGA_315_5641_PCM, sega_315_5641_pcm_device, "315_5641_pcm", "Sega 315-5641 PCM")
@@ -37,6 +38,7 @@ void sega_315_5641_pcm_device::advance_state()
 			if (fiforead != m_fifo_write)
 			{
 				m_fifo_in = m_fifo_data[fiforead];
+				m_vgm_log->Write(0x00, 0x02, m_fifo_in);	// log uPD data at "fixed" time
 				m_fifo_read = fiforead;
 				if (get_fifo_space() == 0x3F)
 				{
@@ -58,6 +60,7 @@ void sega_315_5641_pcm_device::port_w(u8 data)
 	{
 		// update the FIFO value
 		m_fifo_in = data;
+		m_vgm_log->Write(0x00, 0x02, m_fifo_in);
 	}
 	else
 	{

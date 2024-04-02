@@ -38,6 +38,7 @@ public:
 		, m_z80_rom(*this, "audiocpu")
 		, m_oki_rom(*this, "oki%u", 1U)
 		, m_okibank(*this, "okibank")
+		, m_okibank_vgm_log{nullptr, nullptr}
 	{ }
 
 	void batsugun(machine_config &config);
@@ -82,6 +83,7 @@ protected:
 	optional_region_ptr<u8> m_z80_rom;
 	optional_region_ptr_array<u8, 2> m_oki_rom;
 	optional_memory_bank m_okibank;
+	VGMDeviceLog* m_okibank_vgm_log[2];
 
 	u8 m_sound_reset_bit = 0; /* 0x20 for dogyuun/batsugun, 0x10 for vfive, 0x08 for fixeight */
 

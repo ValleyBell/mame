@@ -254,4 +254,8 @@ class validity_checker;
 // declared in video.h
 class video_manager;
 
+// declared in lib/util/vgmwrite.hpp
+class VGMLogger;
+class VGMDeviceLog;
+
 #endif // MAME_EMU_EMUFWD_H

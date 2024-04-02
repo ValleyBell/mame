@@ -1585,7 +1585,7 @@ $(GENDIR)/version.cpp: makefile $(GENDIR)/git_desc | $(GEN_FOLDERS)
 	@echo 'extern const char build_version[];' >> $@
 	@echo 'const char bare_build_version[] = BARE_BUILD_VERSION;' >> $@
 	@echo 'const char bare_vcs_revision[] = BARE_VCS_REVISION;' >> $@
-	@echo 'const char build_version[] = BARE_BUILD_VERSION " (" BARE_VCS_REVISION ")";' >> $@
+	@echo 'const char build_version[] = BARE_BUILD_VERSION " VGM mod (" BARE_VCS_REVISION ")";' >> $@
 else
 $(GENDIR)/version.cpp: makefile $(GENDIR)/git_desc | $(GEN_FOLDERS)
 	@echo #define BARE_BUILD_VERSION "0.264" > $@
@@ -1595,7 +1595,7 @@ $(GENDIR)/version.cpp: makefile $(GENDIR)/git_desc | $(GEN_FOLDERS)
 	@echo extern const char build_version[]; >> $@
 	@echo const char bare_build_version[] = BARE_BUILD_VERSION; >> $@
 	@echo const char bare_vcs_revision[] = BARE_VCS_REVISION; >> $@
-	@echo const char build_version[] = BARE_BUILD_VERSION " (" BARE_VCS_REVISION ")"; >> $@
+	@echo const char build_version[] = BARE_BUILD_VERSION " VGM mod (" BARE_VCS_REVISION ")"; >> $@
 endif
 
 

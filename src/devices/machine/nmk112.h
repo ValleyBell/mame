@@ -45,6 +45,8 @@ private:
 
 	optional_region_ptr<uint8_t> m_rom0, m_rom1;
 	int   m_size0, m_size1;
+	VGMDeviceLog* m_vgm_log0;
+	VGMDeviceLog* m_vgm_log1;
 };
 
 DECLARE_DEVICE_TYPE(NMK112, nmk112_device)

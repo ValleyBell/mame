@@ -141,6 +141,8 @@ protected:
 	uint8_t m_lch_size = 0, m_rch_size = 0;
 	uint16_t m_lch_fifo_state = 0, m_rch_fifo_state = 0;
 
+	VGMDeviceLog* m_vgm_log;
+
 	void lch_pop();
 	void rch_pop();
 

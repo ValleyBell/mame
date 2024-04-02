@@ -81,6 +81,7 @@ protected:
 
 	// internal state
 	sound_stream  *m_channel;                   // stream channel for playback
+	VGMDeviceLog* m_vgm_log;
 
 	// chip configuration
 	uint8_t       m_sample_offset_shift;        // header sample address shift (access data > 0xffff)

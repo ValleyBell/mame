@@ -8,6 +8,7 @@
 */
 
 #include "emu.h"
+#include "vgmwrite.hpp"
 #include "vboysound.h"
 
 // device type definition
@@ -214,6 +215,8 @@ void vboysnd_device::device_start()
 	m_timer = timer_alloc(FUNC(vboysnd_device::delayed_stream_update), this);
 	m_timer->adjust(attotime::zero, 0, rate ? attotime::from_hz(rate / 4) : attotime::never);
 
+	m_vgm_log = machine().vgm_logger().OpenDevice(VGMC_VSU, clock());
+
 	for (int i=0; i<2048; i++)
 		waveFreq2LenTbl[i] = ((2048 - i) * 32) / 120;
 	for (int i=0; i<32; i++)
@@ -410,6 +413,7 @@ void vboysnd_device::write(offs_t offset, uint8_t data)
 	int volReg, intervalReg;
 	int channel, ouroffs;
 
+	m_vgm_log->Write(0x00, offset >> 2, data);
 	mputb((uint8_t *)m_aram+offset, data);
 	if (offset < 0x400)
 		return;

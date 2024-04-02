@@ -96,6 +96,7 @@
 ***************************************************************************/
 
 #include "emu.h"
+#include "vgmwrite.hpp"
 #define QSOUND_LLE
 #include "qsound.h"
 
@@ -134,6 +135,7 @@ qsound_device::qsound_device(machine_config const &mconfig, char const *tag, dev
 	, device_sound_interface(mconfig, *this)
 	, device_rom_interface(mconfig, *this)
 	, m_dsp(*this, "dsp"), m_stream(nullptr)
+	, m_vgm_log(VGMLogger::GetDummyChip())
 	, m_rom_bank(0U), m_rom_offset(0U), m_cmd_addr(0U), m_cmd_data(0U), m_new_data(0U), m_cmd_pending(0U), m_dsp_ready(1U)
 	, m_samples{ 0, 0 }, m_sr(0U), m_fsr(0U), m_ock(1U), m_old(1U), m_ready(0U), m_channel(0U)
 {
@@ -157,6 +159,7 @@ void qsound_device::qsound_w(offs_t offset, u8 data)
 		m_new_data = (m_new_data & 0xff00U) | data;
 		break;
 	case 2:
+		m_vgm_log->Write(0x00, m_new_data, data);
 		m_dsp_ready = 0U;
 		machine().scheduler().synchronize(
 				timer_expired_delegate(FUNC(qsound_device::set_cmd), this),
@@ -207,6 +210,9 @@ void qsound_device::device_start()
 {
 	// hope we get good synchronisation between the DSP and the sound system
 	m_stream = stream_alloc(0, 2, clock() / 2 / 1248);
+
+	m_vgm_log = machine().vgm_logger().OpenDevice(VGMC_QSOUND, clock());
+	m_vgm_log->DumpSampleROM(0x01, memregion(DEVICE_SELF));
 
 	// save DSP communication state
 	save_item(NAME(m_rom_bank));

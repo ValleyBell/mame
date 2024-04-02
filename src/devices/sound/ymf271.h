@@ -150,6 +150,7 @@ private:
 	emu_timer *m_timA;
 	emu_timer *m_timB;
 	sound_stream *m_stream;
+	VGMDeviceLog* m_vgm_log;
 	std::vector<int32_t> m_mix_buffer;
 
 	devcb_write_line m_irq_handler;

@@ -31,6 +31,7 @@
 
 
 #include "emu.h"
+#include "vgmwrite.hpp"
 #include "ymz280b.h"
 
 #if YMZ280B_MAKE_WAVS
@@ -567,6 +568,21 @@ void ymz280b_device::device_start()
 	assert(MAX_SAMPLE_CHUNK < 0x10000);
 	m_scratch = std::make_unique<s16[]>(MAX_SAMPLE_CHUNK);
 
+	m_vgm_log = machine().vgm_logger().OpenDevice(VGMC_YMZ280B, clock());
+	if (memregion(DEVICE_SELF) != nullptr)
+	{
+		m_vgm_log->DumpSampleROM(0x01, memregion(DEVICE_SELF));
+	}
+	else
+	{
+		logerror("ROM Tag: %s\n", get_device_rom_name());
+		auto memreg = get_device_rom();
+		if (memreg != nullptr)
+			m_vgm_log->DumpSampleROM(0x01, memreg);
+		else
+			m_vgm_log->DumpSampleROM(0x01, space());	// try to look up the ROM via space
+	}
+
 	/* state save */
 	save_item(NAME(m_current_register));
 	save_item(NAME(m_status_register));
@@ -902,6 +918,7 @@ void ymz280b_device::write(offs_t offset, u8 data)
 		/* force an update */
 		m_stream->update();
 
+		m_vgm_log->Write(0x00, m_current_register, data);
 		write_to_register(data);
 	}
 }
@@ -925,6 +942,7 @@ ymz280b_device::ymz280b_device(const machine_config &mconfig, const char *tag, d
 	, m_ext_mem_address_mid(0)
 	, m_ext_mem_address(0)
 	, m_irq_handler(*this)
+	, m_vgm_log(VGMLogger::GetDummyChip())
 {
 	memset(m_voice, 0, sizeof(m_voice));
 }

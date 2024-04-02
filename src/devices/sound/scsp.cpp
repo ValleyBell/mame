@@ -32,6 +32,7 @@
 
 // TODO : Envelope/LFO times are based on 44100Hz case?
 #include "emu.h"
+#include "vgmwrite.hpp"
 #include "scsp.h"
 
 #include <algorithm>
@@ -150,6 +151,7 @@ scsp_device::scsp_device(const machine_config &mconfig, const char *tag, device_
 		m_main_irq_cb(*this),
 		m_BUFPTR(0),
 		m_stream(nullptr),
+		m_vgm_log(VGMLogger::GetDummyChip()),
 		m_IrqTimA(0),
 		m_IrqTimBC(0),
 		m_IrqMidi(0),
@@ -201,6 +203,8 @@ void scsp_device::device_start()
 
 	// Stereo output with EXTS0,1 Input (External digital audio output)
 	m_stream = stream_alloc(2, 2, clock() / 512);
+
+	m_vgm_log = machine().vgm_logger().OpenDevice(VGMC_SCSP, clock());
 
 	for (int slot = 0; slot < 32; slot++)
 	{
@@ -1349,6 +1353,8 @@ void scsp_device::exec_dma()
 	logerror("SCSP: DMA transfer START\n"
 				"DMEA: %04x DRGA: %04x DTLG: %04x\n"
 				"DGATE: %d  DDIR: %d\n", m_dma.dmea, m_dma.drga, m_dma.dtlg, m_dma.dgate ? 1 : 0, m_dma.ddir ? 1 : 0);
+	memory_region* ram_region = memregion(tag());
+	m_vgm_log->WriteLargeData(0x01, ram_region->bytes(), m_dma.dmea, m_dma.dtlg, reinterpret_cast<uint16_t*>(ram_region->base()) + m_dma.dmea);
 
 	/* Copy the dma values in a temp storage for resuming later */
 		/* (DMA *can't* overwrite its parameters).                  */
@@ -1434,9 +1440,30 @@ void scsp_device::write(offs_t offset, u16 data, u16 mem_mask)
 {
 	m_stream->update();
 
+	//logerror("SCSP write: Offset %04X, MemMask %04X Data %04X\n", offset, mem_mask, data);
+	if (mem_mask & 0xFF00)
+		m_vgm_log->Write(0x00, (offset << 1) | 0x00, (data & 0xFF00) >> 8);
+	if (mem_mask & 0x00FF)
+		m_vgm_log->Write(0x00, (offset << 1) | 0x01, (data & 0x00FF) >> 0);
+
 	u16 tmp = r16(offset * 2);
 	COMBINE_DATA(&tmp);
 	w16(offset * 2, tmp);
+}
+
+#define ADDR_HIGH(x)	(((x) >> 16) & 0x07)
+#define ADDR_LOW(x)		((x) & 0xFFFF)
+void scsp_device::mem_write(offs_t offset, u16 data, u16 mem_mask)
+{
+	offset <<= 1;
+	if (offset < 0x08000)	// don't log the RAM areas used sound driver work RAM
+		return;
+	if (ACCESSING_BITS_8_15)
+		m_vgm_log->Write(0x80 | ADDR_HIGH(offset), ADDR_LOW(offset) | 0x00, (data & 0xFF00) >> 8);
+	if (ACCESSING_BITS_0_7)
+		m_vgm_log->Write(0x80 | ADDR_HIGH(offset), ADDR_LOW(offset) | 0x01, (data & 0x00FF) >> 0);
+
+	return;
 }
 
 void scsp_device::midi_in(u8 data)

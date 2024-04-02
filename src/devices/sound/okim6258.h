@@ -33,6 +33,8 @@ public:
 	void set_type(int type) { m_adpcm_type = type; }
 	void set_outbits(int outbit) { m_output_bits = outbit; }
 
+	VGMDeviceLog* get_vgmlog_dev() const { return m_vgm_log; }	// for Sharp X68000
+
 	uint8_t status_r();
 	void data_w(uint8_t data);
 	void ctrl_w(uint8_t data);
@@ -60,6 +62,8 @@ private:
 	uint8_t m_data_in;          // ADPCM data-in register
 	uint8_t m_nibble_shift;     // nibble select
 	sound_stream *m_stream;     // which stream are we playing on?
+
+	VGMDeviceLog* m_vgm_log;
 
 	uint8_t m_output_bits;      // D/A precision is 10-bits but 12-bit data can be output serially to an external DAC
 

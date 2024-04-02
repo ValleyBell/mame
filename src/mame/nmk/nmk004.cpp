@@ -7,6 +7,7 @@
 ***************************************************************************/
 
 #include "emu.h"
+#include "vgmwrite.hpp"
 #include "nmk004.h"
 
 #include "sound/okim6295.h"
@@ -37,12 +38,25 @@ void nmk004_device::oki0_bankswitch_w(uint8_t data)
 {
 	data &= 3;
 	membank(":okibank1")->set_entry(data);
+
+	if (m_vgm_log0)
+	{
+		// emulate NMK004 banking scheme via NMK112 banking in VGMs
+		m_vgm_log0->Write(0x00, 0x12, 0x02 + data * 2 + 0);
+		m_vgm_log0->Write(0x00, 0x13, 0x02 + data * 2 + 1);
+	}
 }
 
 void nmk004_device::oki1_bankswitch_w(uint8_t data)
 {
 	data &= 3;
 	membank(":okibank2")->set_entry(data);
+
+	if (m_vgm_log0)
+	{
+		m_vgm_log1->Write(0x00, 0x12, 0x02 + data * 2 + 0);
+		m_vgm_log1->Write(0x00, 0x13, 0x02 + data * 2 + 1);
+	}
 }
 
 uint8_t nmk004_device::tonmk004_r()
@@ -91,7 +105,9 @@ nmk004_device::nmk004_device(const machine_config &mconfig, const char *tag, dev
 	m_cpu(*this, "mcu"),
 	m_reset_cb(*this),
 	to_nmk004(0xff),
-	to_main(0xff)
+	to_main(0xff),
+	m_vgm_log0(nullptr),
+	m_vgm_log1(nullptr)
 {
 }
 
@@ -106,6 +122,16 @@ void nmk004_device::device_start()
 
 	membank(":okibank1")->configure_entries(0, 4, memregion(":oki1")->base() + 0x20000, 0x20000);
 	membank(":okibank2")->configure_entries(0, 4, memregion(":oki2")->base() + 0x20000, 0x20000);
+}
+
+void nmk004_device::device_reset()
+{
+	// Note: We can't do this in device_start, as the OKI sound chip isn't initialized there yet.
+	m_vgm_log0 = machine().device<okim6295_device>(":oki1")->get_vgmlog_dev();
+	m_vgm_log1 = machine().device<okim6295_device>(":oki2")->get_vgmlog_dev();
+	// enable NMK112 banking with unbanked sample table
+	m_vgm_log0->Write(0x00, 0x0E, 0x01);
+	m_vgm_log1->Write(0x00, 0x0E, 0x01);
 }
 
 //-------------------------------------------------

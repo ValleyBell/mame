@@ -10,6 +10,8 @@
 #include "ymfm/src/ymfm_opl.h"
 #include "dirom.h"
 
+class VGMDeviceLog;
+
 
 // ======================> ym3526_device
 
@@ -17,9 +19,25 @@ DECLARE_DEVICE_TYPE(YM3526, ym3526_device);
 
 class ym3526_device : public ymfm_device_base<ymfm::ym3526>
 {
+	using parent = ymfm_device_base<ymfm::ym3526>;
+
 public:
 	// constructor
 	ym3526_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock);
+
+	// write access, overridden for VGM logging
+	virtual void write(offs_t offset, u8 data) override;
+	virtual void address_w(u8 data) override;
+	virtual void data_w(u8 data) override;
+
+	VGMDeviceLog* get_vgmlog_dev() const { return m_vgm_log; }
+
+protected:
+	// device-level overrides
+	virtual void device_start() override;
+
+	VGMDeviceLog* m_vgm_log;
+	u8 m_reg;
 };
 
 
@@ -44,9 +62,22 @@ public:
 	// additional register reads
 	u8 data_r() { return update_streams().read_data(); }
 
+	// write access, overridden for VGM logging
+	virtual void write(offs_t offset, u8 data) override;
+	virtual void address_w(u8 data) override;
+	virtual void data_w(u8 data) override;
+
+	VGMDeviceLog* get_vgmlog_dev() const { return m_vgm_log; }
+
 protected:
+	// device-level overrides
+	virtual void device_start() override;
+
 	// ROM device overrides
 	virtual void rom_bank_pre_change() override;
+
+	VGMDeviceLog* m_vgm_log;
+	u8 m_reg;
 
 private:
 	// ADPCM read/write callbacks
@@ -61,9 +92,25 @@ DECLARE_DEVICE_TYPE(YM3812, ym3812_device);
 
 class ym3812_device : public ymfm_device_base<ymfm::ym3812>
 {
+	using parent = ymfm_device_base<ymfm::ym3812>;
+
 public:
 	// constructor
 	ym3812_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock);
+
+	// write access, overridden for VGM logging
+	virtual void write(offs_t offset, u8 data) override;
+	virtual void address_w(u8 data) override;
+	virtual void data_w(u8 data) override;
+
+	VGMDeviceLog* get_vgmlog_dev() const { return m_vgm_log; }
+
+protected:
+	// device-level overrides
+	virtual void device_start() override;
+
+	VGMDeviceLog* m_vgm_log;
+	u8 m_reg;
 };
 
 
@@ -73,13 +120,30 @@ DECLARE_DEVICE_TYPE(YMF262, ymf262_device);
 
 class ymf262_device : public ymfm_device_base<ymfm::ymf262>
 {
+	using parent = ymfm_device_base<ymfm::ymf262>;
+
 public:
 	// constructor
 	ymf262_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock);
 
+	// write access, overridden for VGM logging
+	virtual void write(offs_t offset, u8 data) override;
+	virtual void address_w(u8 data) override;
+	virtual void data_w(u8 data) override;
+
 	// additional register writes
-	void address_hi_w(u8 data) { update_streams().write_address_hi(data); }
-	void data_hi_w(u8 data) { update_streams().write_data(data); }
+	void address_hi_w(u8 data);
+	void data_hi_w(u8 data);
+
+	VGMDeviceLog* get_vgmlog_dev() const { return m_vgm_log; }
+
+protected:
+	// device-level overrides
+	virtual void device_start() override;
+
+	VGMDeviceLog* m_vgm_log;
+	u8 m_port;
+	u8 m_reg;
 };
 
 
@@ -98,18 +162,33 @@ public:
 	// additional register reads
 	uint8_t data_pcm_r() { return update_streams().read_data_pcm(); }
 
+	// write access, overridden for VGM logging
+	virtual void write(offs_t offset, u8 data) override;
+	virtual void address_w(u8 data) override;
+	virtual void data_w(u8 data) override;
+
 	// additional register writes
-	void address_hi_w(u8 data) { update_streams().write_address_hi(data); }
-	void data_hi_w(u8 data) { update_streams().write_data(data); }
-	void address_pcm_w(u8 data) { update_streams().write_address_pcm(data); }
-	void data_pcm_w(u8 data) { update_streams().write_data_pcm(data); }
+	void address_hi_w(u8 data);
+	void data_hi_w(u8 data);
+	void address_pcm_w(u8 data);
+	void data_pcm_w(u8 data);
+
+	VGMDeviceLog* get_vgmlog_dev() const { return m_vgm_log; }
 
 protected:
+	// device-level overrides
+	virtual void device_start() override;
+
 	// device_rom_interface overrides
 	virtual void rom_bank_pre_change() override;
 
 	// sound overrides
 	virtual void sound_stream_update(sound_stream &stream, std::vector<read_stream_view> const &inputs, std::vector<write_stream_view> &outputs) override;
+
+	VGMDeviceLog* m_vgm_log;
+	u8 m_fm_port;
+	u8 m_fm_reg;
+	u8 m_pcm_reg;
 
 private:
 	// ADPCM read/write callbacks
@@ -130,6 +209,13 @@ public:
 	// constructor
 	ym2413_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock);
 
+	// write access, overridden for VGM logging
+	virtual void write(offs_t offset, u8 data) override;
+	virtual void address_w(u8 data) override;
+	virtual void data_w(u8 data) override;
+
+	VGMDeviceLog* get_vgmlog_dev() const { return m_vgm_log; }
+
 protected:
 	// device-level overrides
 	virtual void device_start() override;
@@ -137,6 +223,9 @@ protected:
 
 	// internal state
 	required_region_ptr<u8> m_internal; // internal memory region
+
+	VGMDeviceLog* m_vgm_log;
+	u8 m_reg;
 };
 
 
@@ -152,6 +241,13 @@ public:
 	// constructor
 	ym2423_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock);
 
+	// write access, overridden for VGM logging
+	virtual void write(offs_t offset, u8 data) override;
+	virtual void address_w(u8 data) override;
+	virtual void data_w(u8 data) override;
+
+	VGMDeviceLog* get_vgmlog_dev() const { return m_vgm_log; }
+
 protected:
 	// device-level overrides
 	virtual void device_start() override;
@@ -159,6 +255,9 @@ protected:
 
 	// internal state
 	required_region_ptr<u8> m_internal; // internal memory region
+
+	VGMDeviceLog* m_vgm_log;
+	u8 m_reg;
 };
 
 
@@ -174,6 +273,13 @@ public:
 	// constructor
 	ymf281_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock);
 
+	// write access, overridden for VGM logging
+	virtual void write(offs_t offset, u8 data) override;
+	virtual void address_w(u8 data) override;
+	virtual void data_w(u8 data) override;
+
+	VGMDeviceLog* get_vgmlog_dev() const { return m_vgm_log; }
+
 protected:
 	// device-level overrides
 	virtual void device_start() override;
@@ -181,6 +287,9 @@ protected:
 
 	// internal state
 	required_region_ptr<u8> m_internal; // internal memory region
+
+	VGMDeviceLog* m_vgm_log;
+	u8 m_reg;
 };
 
 
@@ -196,6 +305,13 @@ public:
 	// constructor
 	ds1001_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock);
 
+	// write access, overridden for VGM logging
+	virtual void write(offs_t offset, u8 data) override;
+	virtual void address_w(u8 data) override;
+	virtual void data_w(u8 data) override;
+
+	VGMDeviceLog* get_vgmlog_dev() const { return m_vgm_log; }
+
 protected:
 	// device-level overrides
 	virtual void device_start() override;
@@ -203,6 +319,9 @@ protected:
 
 	// internal state
 	required_region_ptr<u8> m_internal; // internal memory region
+
+	VGMDeviceLog* m_vgm_log;
+	u8 m_reg;
 };
 
 #endif // MAME_SOUND_YMOPL_H

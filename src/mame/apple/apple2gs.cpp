@@ -75,6 +75,7 @@
 #include "machine/z80scc.h"
 #include "sound/es5503.h"
 #include "sound/spkrdev.h"
+#include "vgmwrite.hpp"
 
 #include "machine/applefdintf.h"
 #include "machine/iwm.h"
@@ -2058,6 +2059,7 @@ void apple2gs_state::c000_w(offs_t offset, u8 data)
 			if (m_sndglu_ctrl & 0x40)    // docram access
 			{
 				m_docram[m_sndglu_addr] = data;
+				m_doc->get_vgmlog_dev()->Write(0x80, m_sndglu_addr, data);
 			}
 			else
 			{

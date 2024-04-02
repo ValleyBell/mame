@@ -577,7 +577,13 @@ be induced by cutoff currents from the 15 FETs.
 */
 
 #include "emu.h"
+#include "vgmwrite.hpp"
 #include "ay8910.h"
+
+extern const device_type YM2203;
+extern const device_type YM2608;
+extern const device_type YM2610;
+extern const device_type YM2610B;
 
 #define LOG_IGNORED_WRITES (1U << 1)
 #define LOG_WARNINGS       (1U << 2)
@@ -914,6 +920,8 @@ stream_buffer::sample_t ay8910_device::mix_3D()
 
 void ay8910_device::ay8910_write_reg(int r, int v)
 {
+	m_vgm_log->Write(0x00, r, v);
+
 	if ((r & 0xf) == AY_EASHAPE) // shared register
 		r &= 0xf;
 
@@ -1309,6 +1317,35 @@ void ay8910_device::device_start()
 
 	ay_set_clock(master_clock);
 	ay8910_statesave();
+
+	uint8_t vgmChipType;
+	if (type() == AY8910) vgmChipType = 0x00;
+	else if (type() == AY8912) vgmChipType = 0x01;
+	else if (type() == AY8913) vgmChipType = 0x02;
+	else if (type() == AY8930) vgmChipType = 0x03;
+	else if (type() == AY8914) vgmChipType = 0x04;
+	else if (type() == YM2149) vgmChipType = 0x10;
+	else if (type() == YM3439) vgmChipType = 0x11;
+	else if (type() == YMZ284) vgmChipType = 0x12;
+	else if (type() == YMZ294) vgmChipType = 0x13;
+	else if (type() == YM2203) vgmChipType = 0x20;
+	else if (type() == YM2608) vgmChipType = 0x21;
+	else if (type() == YM2610 || type() == YM2610B) vgmChipType = 0x22;
+	else vgmChipType = 0xFF;
+
+	if (vgmChipType & 0x20)
+	{
+		m_vgm_log = VGMLogger::GetDummyChip();
+	}
+	else
+	{
+		m_vgm_log = machine().vgm_logger().OpenDevice(VGMC_AY8910, clock());
+		m_vgm_log->SetProperty(0x00, vgmChipType);
+		m_vgm_log->SetProperty(0x01, m_flags);
+		m_vgm_log->SetProperty(0x10, m_res_load[0]);
+		m_vgm_log->SetProperty(0x11, m_res_load[1]);
+		m_vgm_log->SetProperty(0x12, m_res_load[2]);
+	}
 }
 
 
@@ -1599,7 +1636,8 @@ ay8910_device::ay8910_device(const machine_config &mconfig, device_type type, co
 	m_port_a_read_cb(*this, 0xff),
 	m_port_b_read_cb(*this, 0xff),
 	m_port_a_write_cb(*this),
-	m_port_b_write_cb(*this)
+	m_port_b_write_cb(*this),
+	m_vgm_log(VGMLogger::GetDummyChip())
 {
 	memset(&m_regs,0,sizeof(m_regs));
 	memset(&m_tone,0,sizeof(m_tone));

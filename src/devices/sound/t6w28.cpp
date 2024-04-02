@@ -32,6 +32,7 @@ Offset 0:
 ***************************************************************************/
 
 #include "emu.h"
+#include "vgmwrite.hpp"
 #include "t6w28.h"
 
 
@@ -48,6 +49,8 @@ void t6w28_device::write(offs_t offset, uint8_t data)
 	m_channel->update();
 
 	offset &= 1;
+
+	m_vgm_log->Write(offset, data, 0x00);
 
 	if (data & 0x80)
 	{
@@ -112,7 +115,9 @@ void t6w28_device::sound_stream_update(sound_stream &stream, std::vector<read_st
 
 
 	/* If the volume is 0, increase the counter */
-	for (i = 0;i < 8;i++)
+	/* Note: This just introduces a bug, where a tone on the right speaker gets muted when the left speaker has volume 0. */
+	/* Thus I'm disabling this optimization for now. -Valley Bell */
+	for (i = 0;i < 8 && false;i++)
 	{
 		if (m_volume[i] == 0)
 		{
@@ -328,6 +333,16 @@ void t6w28_device::device_start()
 	m_whitenoise_taps = 0x06;
 	m_whitenoise_invert = false;
 
+	m_vgm_log = machine().vgm_logger().OpenDevice(VGMC_T6W28, clock());
+	m_vgm_log->SetProperty(0x01, 0x10000);	// m_feedback_mask, sn76496.cpp lists 0x10000 for SN76489A
+	m_vgm_log->SetProperty(0x02, 0x02);		// m_whitenoise_tap1
+	m_vgm_log->SetProperty(0x03, 0x04);		// m_whitenoise_tap2
+	m_vgm_log->SetProperty(0x04, 0);		// m_negate
+	m_vgm_log->SetProperty(0x05, 0);		// m_stereo
+	m_vgm_log->SetProperty(0x06, 8);		// m_clock_divider
+	m_vgm_log->SetProperty(0x07, 1);		// m_freq0_is_max
+	m_vgm_log->SetProperty(0x08, 0);		// m_ncr_style_psg
+
 	save_item(NAME(m_register));
 	save_item(NAME(m_last_register));
 	save_item(NAME(m_volume));
@@ -351,5 +366,6 @@ t6w28_device::t6w28_device(const machine_config &mconfig, const char *tag, devic
 	: device_t(mconfig, T6W28, tag, owner, clock)
 	, device_sound_interface(mconfig, *this)
 	, m_channel(nullptr)
+	, m_vgm_log(VGMLogger::GetDummyChip())
 {
 }
