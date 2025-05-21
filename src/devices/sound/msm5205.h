@@ -22,12 +22,7 @@ public:
 
 	msm5205_device(const machine_config &mconfig, const char *tag, device_t *owner, u32 clock);
 
-	void set_prescaler_selector(int select)
-	{
-		m_s1 = BIT(select, 1);
-		m_s2 = BIT(select, 0);
-		m_bitwidth = (select & 4) ? 4 : 3;
-	}
+	void set_prescaler_selector(int select);
 	auto vck_callback() { return m_vck_cb.bind(); }
 	auto vck_legacy_callback() { return m_vck_legacy_cb.bind(); }
 
@@ -67,6 +62,7 @@ protected:
 
 	// internal state
 	sound_stream *m_stream;     // number of stream system
+	VGMDeviceLog *m_vgm_log;
 	emu_timer *m_vck_timer;     // VCK callback timer
 	emu_timer *m_capture_timer; // delay after VCK active edge for ADPCM input capture
 	u8 m_data;                  // next adpcm data

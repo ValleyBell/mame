@@ -73,6 +73,7 @@ private:
 	u32           m_bank;
 
 	sound_stream *m_stream;
+	VGMDeviceLog *m_vgm_log;
 	devcb_write8  m_port_write_handler;
 };
 

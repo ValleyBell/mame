@@ -35,6 +35,7 @@
 ***************************************************************************/
 
 #include "emu.h"
+#include "vgmwrite.hpp"
 #include "k005289.h"
 
 // device type definition
@@ -66,6 +67,9 @@ void k005289_device::device_start()
 {
 	/* get stream channels */
 	m_stream = stream_alloc(0, 1, clock());
+
+	m_vgm_log = machine().vgm_logger().OpenDevice(VGMC_K005289, clock());
+	m_vgm_log->DumpSampleROM(0x01, memregion(DEVICE_SELF));
 
 	/* reset all the voices */
 	for (auto & voice : m_voice)
@@ -109,6 +113,7 @@ void k005289_device::sound_stream_update(sound_stream &stream, std::vector<read_
 void k005289_device::control_A_w(u8 data)
 {
 	m_stream->update();
+	m_vgm_log->Write(0x00, data, 0x00);
 
 	m_voice[0].volume = data & 0xf;
 	m_voice[0].waveform = (m_voice[0].waveform & ~0xe0) | (data & 0xe0);
@@ -118,6 +123,7 @@ void k005289_device::control_A_w(u8 data)
 void k005289_device::control_B_w(u8 data)
 {
 	m_stream->update();
+	m_vgm_log->Write(0x01, data, 0x00);
 
 	m_voice[1].volume = data & 0xf;
 	m_voice[1].waveform = (m_voice[1].waveform & ~0xe0) | (data & 0xe0);
@@ -126,12 +132,14 @@ void k005289_device::control_B_w(u8 data)
 
 void k005289_device::ld1_w(offs_t offset, u8 data)
 {
+	m_vgm_log->Write(0x02, offset, 0x00);
 	m_voice[0].pitch = 0xfff - offset;
 }
 
 
 void k005289_device::ld2_w(offs_t offset, u8 data)
 {
+	m_vgm_log->Write(0x03, offset, 0x00);
 	m_voice[1].pitch = 0xfff - offset;
 }
 
@@ -139,6 +147,7 @@ void k005289_device::ld2_w(offs_t offset, u8 data)
 void k005289_device::tg1_w(u8 data)
 {
 	m_stream->update();
+	m_vgm_log->Write(0x04, data, 0x00);
 
 	m_voice[0].frequency = m_voice[0].pitch;
 }
@@ -147,6 +156,7 @@ void k005289_device::tg1_w(u8 data)
 void k005289_device::tg2_w(u8 data)
 {
 	m_stream->update();
+	m_vgm_log->Write(0x05, data, 0x00);
 
 	m_voice[1].frequency = m_voice[1].pitch;
 }

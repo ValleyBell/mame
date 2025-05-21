@@ -24,6 +24,7 @@
 
 
 #include "emu.h"
+#include "vgmwrite.hpp"
 #include "k007232.h"
 #include "wavwrite.h"
 #include <algorithm>
@@ -41,6 +42,7 @@ k007232_device::k007232_device(const machine_config &mconfig, const char *tag, d
 	, m_pcmlimit(~0)
 	, m_bank(0)
 	, m_stream(nullptr)
+	, m_vgm_log(VGMLogger::GetDummyChip())
 	, m_port_write_handler(*this)
 {
 	std::fill(std::begin(m_wreg), std::end(m_wreg), 0);
@@ -68,6 +70,9 @@ void k007232_device::device_start()
 		}
 	}
 	space(0).cache(m_cache);
+
+	m_vgm_log = machine().vgm_logger().OpenDevice(VGMC_K007232, clock());
+	m_vgm_log->DumpSampleROM(0x01, memregion(DEVICE_SELF));
 
 	/* Set up the chips */
 	for (int i = 0; i < KDAC_A_PCM_MAX; i++)
@@ -128,6 +133,7 @@ void k007232_device::write(offs_t offset, u8 data)
 	m_stream->update();
 
 	m_wreg[offset] = data; // standard data write
+	m_vgm_log->Write(0x00, offset & 0xFF, data);
 
 	if (offset == 12)
 	{
@@ -179,6 +185,7 @@ u8 k007232_device::read(offs_t offset)
 	if (offset == 5 || offset == 11)
 	{
 		channel_t *channel = &m_channel[(offset == 11) ? 1 : 0];
+		m_vgm_log->Write(0x00, 0x1F, offset & 0xFF);	// capture read as special register 0x1F
 
 		if (channel->start < m_pcmlimit)
 		{
@@ -196,12 +203,16 @@ void k007232_device::set_volume(int channel, int vol_a, int vol_b)
 {
 	m_channel[channel].vol[0] = vol_a;
 	m_channel[channel].vol[1] = vol_b;
+	m_vgm_log->Write(0x00, 0x10 | (channel << 1), vol_a);	// capture external volume control with special registers 0x10..0x13
+	m_vgm_log->Write(0x00, 0x11 | (channel << 1), vol_b);
 }
 
 void k007232_device::set_bank(int chan_a_bank, int chan_b_bank)
 {
 	m_channel[0].bank = chan_a_bank << 17;
 	m_channel[1].bank = chan_b_bank << 17;
+	m_vgm_log->Write(0x00, 0x14, chan_a_bank);
+	m_vgm_log->Write(0x00, 0x15, chan_b_bank);
 }
 
 /*****************************************************************************/

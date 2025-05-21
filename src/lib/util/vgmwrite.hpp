@@ -133,7 +133,11 @@ public:
 		uint32_t lngHzC352;
 		
 		uint32_t lngHzGA20;
-		uint8_t bytReserved[0x1C];
+		uint32_t lngHzMikey;
+		uint32_t lngHzK007232;
+		uint32_t lngHzK005289;
+		uint32_t lngHzOKIM5205;
+		uint8_t bytReserved[0x0C];
 	};	// -> 0x100 Bytes
 	struct GD3_TAG
 	{
@@ -213,7 +217,6 @@ private:
 	GD3_TAG _tag;
 };
 
-
 // VGM Chip Constants
 enum ChipTypes : uint8_t
 {
@@ -263,6 +266,11 @@ enum ChipTypes : uint8_t
 	VGMC_X1_010		= 0x26,
 	VGMC_C352		= 0x27,
 	VGMC_GA20		= 0x28,
+	// v1.72
+	VGMC_MIKEY		= 0x29,
+	VGMC_K007232	= 0x2A,
+	VGMC_K005289	= 0x2B,
+	VGMC_OKIM5205	= 0x2C,
 
 	//VGMC_OKIM6376	= 0xFF,
 };
