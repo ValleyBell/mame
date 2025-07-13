@@ -1385,9 +1385,8 @@ void VGMDeviceLog::SetProperty(uint8_t attr, uint32_t data)
 		switch(attr)
 		{
 		case 0x00:	// Chip Type (0 = MSM5205, 1 = MSM6585)
-			vh.lngHzOKIM5205 = (vh.lngHzK051649 & 0x7FFFFFFF) | (data << 31);
+			vh.lngHzOKIM5205 = (vh.lngHzOKIM5205 & 0x7FFFFFFF) | (data << 31);
 			break;
-		#if 0
 		case 0x01:	// Clock Divider
 			vh.bytOKI5205Flags &= ~(0x03 << 0);
 			vh.bytOKI5205Flags |= (data & 0x03) << 0;
@@ -1396,7 +1395,6 @@ void VGMDeviceLog::SetProperty(uint8_t attr, uint32_t data)
 			vh.bytOKI5205Flags &= ~(0x01 << 2);
 			vh.bytOKI5205Flags |= (data & 0x01) << 2;
 			break;
-		#endif
 		}
 		break;
 //	case VGMC_OKIM6376:

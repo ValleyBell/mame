@@ -102,6 +102,10 @@ void msm5205_device::device_start()
 	m_capture_timer = timer_alloc(FUNC(msm5205_device::update_adpcm), this);
 
 	m_vgm_log = machine().vgm_logger().OpenDevice(VGMC_OKIM5205, clock());
+	if (type() == MSM6585)
+		m_vgm_log->SetProperty(0x00, 0x01);	// MSM6585
+	else
+		m_vgm_log->SetProperty(0x00, 0x00);	// MSM5205
 	m_vgm_log->SetProperty(0x01, (m_s1 << 0) | (m_s2 << 1));
 	m_vgm_log->SetProperty(0x02, (m_bitwidth == 4) ? 1 : 0);
 

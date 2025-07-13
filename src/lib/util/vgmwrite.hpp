@@ -128,7 +128,7 @@ public:
 		uint8_t bytES5503Chns;
 		uint8_t bytES5506Chns;
 		uint8_t bytC352ClkDiv;
-		uint8_t bytESReserved;
+		uint8_t bytOKI5205Flags;
 		uint32_t lngHzX1_010;
 		uint32_t lngHzC352;
 		
