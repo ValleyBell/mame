@@ -672,7 +672,7 @@ void hotchase_state::hotchase_sound_control_w(offs_t offset, uint8_t data)
 		case 0x3:
 		case 0x4:
 		case 0x5:
-			m_k007232[offset >> 1]->set_volume( offset&1,  (data&0x0f) * 0x08, (data>>4) * 0x08 );
+			m_k007232[offset >> 1]->set_volume( offset&1,  (data&0x0f) * 0x11 / 2, (data>>4) * 0x11 / 2 );
 			break;
 
 		case 0x06:  /* Bankswitch for chips 0 & 1 */

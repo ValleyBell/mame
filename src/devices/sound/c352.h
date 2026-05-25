@@ -96,6 +96,8 @@ private:
 
 	sound_stream *m_stream;
 
+	VGMDeviceLog* m_vgm_log;
+
 	int m_sample_rate_base;
 	int m_divider;
 

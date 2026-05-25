@@ -794,6 +794,8 @@ GFXDECODE_END
 
 void buggychl_state::ta7630_volbal_msm_w(uint8_t data)
 {
+	m_msm->ext_vol_w(0x10, data >> 4);
+	m_msm->ext_vol_w(0x11, data >> 4);
 	m_ta7630->set_device_volume(m_msm, data >> 4);
 }
 

@@ -70,6 +70,8 @@ private:
 	uint8_t m_fds_sides;
 	int32_t m_fds_last_side;
 	int32_t m_fds_count;
+
+	VGMDeviceLog* m_vgm_log;
 };
 
 

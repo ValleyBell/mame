@@ -58,6 +58,7 @@ private:
 	devcb_write_line m_ready_handler;
 	emu_timer       *m_ready_timer;
 	sound_stream    *m_sound;
+	VGMDeviceLog    *m_vgm_log;
 
 	// internal state
 	int32_t         m_ready_state;      // READY pin state

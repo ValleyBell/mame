@@ -36,6 +36,7 @@
  */
 
 #include "emu.h"
+#include "vgmwrite.hpp"
 #include "multipcm.h"
 
 const int32_t multipcm_device::VALUE_TO_CHANNEL[32] =
@@ -157,6 +158,7 @@ uint8_t multipcm_device::read()
 
 void multipcm_device::write(offs_t offset, uint8_t data)
 {
+	m_vgm_log->Write(0x00, offset, data);
 	switch(offset)
 	{
 		case 0: // Data write
@@ -180,6 +182,28 @@ DEFINE_DEVICE_TYPE(MULTIPCM, multipcm_device, "ymw258f", "Yamaha YMW-258-F")
 multipcm_device::multipcm_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock) :
 	gew_pcm_device(mconfig, MULTIPCM, tag, owner, clock, 28, 224),
 	m_cur_slot(0),
-	m_address(0)
+	m_address(0),
+	m_vgm_log(VGMLogger::GetDummyChip())
 {
 }
+
+void multipcm_device::device_start()
+{
+	gew_pcm_device::device_start();
+
+	m_vgm_log = machine().vgm_logger().OpenDevice(VGMC_MULTIPCM, clock() * 180 / 224);
+	if (memregion(DEVICE_SELF) != nullptr)
+	{
+		m_vgm_log->DumpSampleROM(0x01, memregion(DEVICE_SELF));
+	}
+	else
+	{
+		logerror("ROM Tag: %s\n", get_device_rom_name());
+		auto memreg = get_device_rom();
+		if (memreg != nullptr)
+			m_vgm_log->DumpSampleROM(0x01, memreg);
+		else
+			m_vgm_log->DumpSampleROM(0x01, space());	// try to look up the ROM via space
+	}
+}
+

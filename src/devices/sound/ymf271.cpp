@@ -22,6 +22,7 @@
 */
 
 #include "emu.h"
+#include "vgmwrite.hpp"
 #include "ymf271.h"
 
 #include <algorithm>
@@ -1448,6 +1449,8 @@ void ymf271_device::write(offs_t offset, u8 data)
 
 	offset &= 0xf;
 	m_regs_main[offset] = data;
+	if (offset & 0x01)
+		m_vgm_log->Write(offset >> 1, m_regs_main[offset & 0x0E], data);
 
 	switch (offset)
 	{
@@ -1732,6 +1735,9 @@ void ymf271_device::device_start()
 
 	m_mix_buffer.resize(m_master_clock / (384/4));
 	m_stream = stream_alloc(0, 4, m_master_clock / 384);
+
+	m_vgm_log = machine().vgm_logger().OpenDevice(VGMC_YMF271, m_master_clock);
+	m_vgm_log->DumpSampleROM(0x01, memregion(DEVICE_SELF));
 }
 
 //-------------------------------------------------
@@ -1800,6 +1806,7 @@ ymf271_device::ymf271_device(const machine_config &mconfig, const char *tag, dev
 	, m_timA(nullptr)
 	, m_timB(nullptr)
 	, m_stream(nullptr)
+	, m_vgm_log(VGMLogger::GetDummyChip())
 	, m_irq_handler(*this)
 {
 	memset(m_slots, 0, sizeof(m_slots));

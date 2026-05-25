@@ -7,6 +7,7 @@
 ***************************************************************************/
 
 #include "emu.h"
+#include "vgmwrite.hpp"
 #include "nmk004.h"
 
 #include "sound/okim6295.h"
@@ -60,6 +61,13 @@ void nmk004_device::oki_bankswitch_w(uint8_t data)
 {
 	data &= 3;
 	m_okibank[Which]->set_entry(data);
+
+	if (m_vgm_log[Which])
+	{
+		// emulate NMK004 banking scheme via NMK112 banking in VGMs
+		m_vgm_log[Which]->Write(0x00, 0x12, 0x02 + data * 2 + 0);
+		m_vgm_log[Which]->Write(0x00, 0x13, 0x02 + data * 2 + 1);
+	}
 }
 
 uint8_t nmk004_device::tonmk004_r()
@@ -115,6 +123,7 @@ nmk004_device::nmk004_device(const machine_config &mconfig, const char *tag, dev
 	, m_oki_write_cb{{*this}, {*this}}
 	, to_nmk004(0xff)
 	, to_main(0xff)
+	, m_vgm_log({nullptr, nullptr})
 {
 }
 
@@ -130,6 +139,17 @@ void nmk004_device::device_start()
 	for (int i = 0; i < 2; i++)
 	{
 		m_okibank[i]->configure_entries(0, 4, m_okirom[i] + 0x20000, 0x20000);
+	}
+}
+
+void nmk004_device::device_reset()
+{
+	// Note: We can't do this in device_start, as the OKI sound chip isn't initialized there yet.
+	const char* device_tags[2] = {":oki1", ":oki2"};
+	for (int i = 0; i < 2; i++)
+	{
+		m_vgm_log[i] = machine().device<okim6295_device>(device_tags[i])->get_vgmlog_dev();
+		m_vgm_log[i]->Write(0x00, 0x0E, 0x01);
 	}
 }
 

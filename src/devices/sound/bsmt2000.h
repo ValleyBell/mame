@@ -77,8 +77,10 @@ private:
 
 	// internal state
 	sound_stream *              m_stream;
+	VGMDeviceLog *              m_vgm_log;
 	required_device<tms320c15_device> m_cpu;
 	uint16_t                    m_register_select;
+	uint16_t                    m_reg_vgm;
 	uint16_t                    m_write_data;
 	uint16_t                    m_rom_address;
 	uint16_t                    m_rom_bank;

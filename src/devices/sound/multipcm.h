@@ -7,18 +7,27 @@
 
 #include "gew.h"
 
+class VGMDeviceLog;
+
 class multipcm_device : public gew_pcm_device
 {
 public:
 	multipcm_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock);
 
+	VGMDeviceLog* get_vgmlog_dev() const { return m_vgm_log; }	// for Sega Model 1/System 32
+
 	void write(offs_t offset, uint8_t data);
 	uint8_t read();
+
+protected:
+	// device-level overrides
+	virtual void device_start() override;
 
 private:
 	// internal state
 	uint32_t m_cur_slot;
 	uint32_t m_address;
+	VGMDeviceLog* m_vgm_log;
 
 	static const int32_t VALUE_TO_CHANNEL[32];
 

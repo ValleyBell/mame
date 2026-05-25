@@ -6,6 +6,7 @@
 #pragma once
 
 #include "dirom.h"
+#include "vgmwrite.hpp"
 
 
 //**************************************************************************
@@ -28,8 +29,11 @@ public:
 	void hypervoice_w(offs_t offset, u16 data, u16 mem_mask);
 	u16 hypervoice_r(offs_t offset, u16 mem_mask);
 
+	void vram_w(offs_t offset, u16 data, u16 mem_mask);
 	void port_w(offs_t offset, u16 data, u16 mem_mask);
 	u16 port_r(offs_t offset, u16 mem_mask);
+
+	VGMDeviceLog* get_vgmlog_dev() const { return m_vgm_log; }
 
 protected:
 	// device-level overrides
@@ -99,6 +103,7 @@ private:
 	u8 fetch_sample(int channel, int offset);
 
 	sound_stream *m_channel;
+	VGMDeviceLog *m_vgm_log;
 	channel_t m_audio[4];
 	s8        m_sweep_step;
 	u32       m_sweep_time;

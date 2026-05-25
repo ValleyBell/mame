@@ -162,6 +162,7 @@ TIMER_CALLBACK_MEMBER(ad_59mc07_device::frq_adjuster_callback)
 	m_cymvol *= 0.94f;
 	m_hihatvol *= 0.94f;
 
+	m_msm->ext_vol_w(10, uint8_t((m_hihatvol + m_cymvol * (m_ay_port_b & 3)) * 0x80 / 3));
 	m_msm->set_output_gain(10, m_hihatvol + m_cymvol * (m_ay_port_b & 3) * 0.33f);   /* NO from msm5232 */
 }
 
@@ -283,6 +284,15 @@ void ad_59mc07_device::dac_latch_w(uint8_t data)
 void ad_59mc07_device::i8155_porta_w(uint8_t data)
 {
 	m_8155_port_a = data;
+
+	m_msm->ext_vol_w(0, uint8_t((data >> 4) * 0x80 / 15));
+	m_msm->ext_vol_w(1, uint8_t((data >> 4) * 0x80 / 15));
+	m_msm->ext_vol_w(2, uint8_t((data >> 4) * 0x80 / 15));
+	m_msm->ext_vol_w(3, uint8_t((data >> 4) * 0x80 / 15));
+	m_msm->ext_vol_w(4, uint8_t((data & 0x0f) * 0x80 / 15));
+	m_msm->ext_vol_w(5, uint8_t((data & 0x0f) * 0x80 / 15));
+	m_msm->ext_vol_w(6, uint8_t((data & 0x0f) * 0x80 / 15));
+	m_msm->ext_vol_w(7, uint8_t((data & 0x0f) * 0x80 / 15));
 	m_msm->set_output_gain(0, (data >> 4) / 15.0);   // group1 from msm5232
 	m_msm->set_output_gain(1, (data >> 4) / 15.0);   // group1 from msm5232
 	m_msm->set_output_gain(2, (data >> 4) / 15.0);   // group1 from msm5232
@@ -302,11 +312,15 @@ void ad_59mc07_device::i8155_portb_w(uint8_t data)
 void ad_59mc07_device::i8155_portc_w(uint8_t data)
 {
 	m_8155_port_c = data;
+	m_msm->ext_vol_w(8, uint8_t((data & 0x0f) * 0x80 / 15));
 	m_msm->set_output_gain(8, (data & 0x0f) / 15.0);     // SOLO  8' from msm5232
+	uint8_t outvol;
 	if (data & 0x20)
-		m_msm->set_output_gain(9, (data & 0x0f) / 15.0); // SOLO 16' from msm5232
+		outvol = data & 0x0f;
 	else
-		m_msm->set_output_gain(9, 0);   // SOLO 16' from msm5232
+		outvol = 0;
+	m_msm->ext_vol_w(9, uint8_t(outvol * 0x80 / 15));
+	m_msm->set_output_gain(9, outvol / 15.0); // SOLO 16' from msm5232
 }
 
 void ad_59mc07_device::msm5232_gate(int state)

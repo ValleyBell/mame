@@ -8,6 +8,7 @@
 ******************************************************************************/
 
 #include "emu.h"
+#include "vgmwrite.hpp"
 #include "lynx.h"
 #include <algorithm>
 
@@ -407,6 +408,7 @@ void lynx_sound_device::write(offs_t offset, u8 data)
 	LYNX_AUDIO *channel = &m_audio[(offset >> 3) & 3];
 
 	m_mixer_channel->update();
+	m_vgm_log->Write(0x00, offset & 0xFF, data);
 
 	if (offset < 0x40)
 	{

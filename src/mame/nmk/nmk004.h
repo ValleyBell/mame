@@ -45,6 +45,7 @@ public:
 protected:
 	// device-level overrides
 	virtual void device_start() override ATTR_COLD;
+	virtual void device_reset() override ATTR_COLD;
 	virtual const tiny_rom_entry *device_rom_region() const override ATTR_COLD;
 	virtual void device_add_mconfig(machine_config &config) override ATTR_COLD;
 
@@ -61,6 +62,8 @@ private:
 
 	uint8_t to_nmk004;
 	uint8_t to_main;
+
+	std::array<VGMDeviceLog*, 2> m_vgm_log;
 
 	template <unsigned Which> void oki_bankswitch_w(uint8_t data);
 	uint8_t ym_r(offs_t offset);

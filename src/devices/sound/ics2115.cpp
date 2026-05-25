@@ -17,6 +17,7 @@
 */
 
 #include "emu.h"
+#include "vgmwrite.hpp"
 #include "ics2115.h"
 
 #include <algorithm>
@@ -45,6 +46,7 @@ ics2115_device::ics2115_device(const machine_config &mconfig, const char *tag, d
 	, device_memory_interface(mconfig, *this)
 	, m_data_config("data", ENDIANNESS_LITTLE, 8, 24) // 24 bit address bus, 8 bit data bus(ROM), 11 bit address bus, 8 bit data bus, 4 banks(DRAM)
 	, m_stream(nullptr)
+	, m_vgm_log(VGMLogger::GetDummyChip())
 	, m_rom(*this, DEVICE_SELF)
 	, m_irq_cb(*this)
 	, m_active_osc(0)
@@ -71,6 +73,16 @@ void ics2115_device::device_start()
 	m_timer[0].timer = timer_alloc(FUNC(ics2115_device::timer_cb), this);
 	m_timer[1].timer = timer_alloc(FUNC(ics2115_device::timer_cb), this);
 	m_stream = stream_alloc(0, 2, clock() / (32 * 32));
+
+	m_vgm_log = machine().vgm_logger().OpenDevice(VGMC_ICS2115, clock());
+	if (memregion(DEVICE_SELF) != nullptr)
+	{
+		m_vgm_log->DumpSampleROM(0x01, memregion(DEVICE_SELF));
+	}
+	else
+	{
+		m_vgm_log->DumpSampleROM(0x01, space(0));
+	}
 
 	//Exact formula as per patent 5809466
 	//This seems to give the ok fit but it is not good enough.
@@ -972,6 +984,7 @@ u8 ics2115_device::read(offs_t offset)
 
 void ics2115_device::write(offs_t offset, u8 data)
 {
+	m_vgm_log->Write(0x00, offset, data);
 	switch (offset)
 	{
 		case 1:
@@ -1022,9 +1035,16 @@ void ics2115_device::word_w(offs_t offset, u16 data, u16 mem_mask)
 		case 0:
 		case 1:
 			if (ACCESSING_BITS_0_7)
+			{
+				m_vgm_log->Write(0x00, 0x01, data & 0xff);
 				write(offset, data & 0xff);
+			}
 			break;
 		case 2:
+			if (ACCESSING_BITS_0_7)
+				m_vgm_log->Write(0x00, 0x02, data & 0xff);
+			if (ACCESSING_BITS_8_15)
+				m_vgm_log->Write(0x00, 0x03, (data >> 8) & 0xff);
 			reg_write(data, mem_mask);
 			break;
 		/*

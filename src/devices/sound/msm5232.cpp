@@ -1,6 +1,7 @@
 // license:GPL-2.0+
 // copyright-holders:Jarek Burczynski, Hiromitsu Shioya
 #include "emu.h"
+#include "vgmwrite.hpp"
 #include "msm5232.h"
 
 #define CLOCK_RATE_DIVIDER 16
@@ -16,6 +17,7 @@ msm5232_device::msm5232_device(const machine_config &mconfig, const char *tag, d
 	: device_t(mconfig, MSM5232, tag, owner, clock)
 	, device_sound_interface(mconfig, *this)
 	, m_stream(nullptr)
+	, m_vgm_log(VGMLogger::GetDummyChip())
 	, m_noise_cnt(0), m_noise_step(0), m_noise_rng(0), m_noise_clocks(0), m_UpdateStep(0), m_control1(0), m_control2(0), m_gate(0), m_chip_clock(0), m_rate(0)
 	, m_gate_handler_cb(*this)
 {
@@ -33,6 +35,9 @@ void msm5232_device::device_start()
 	init(clock(), rate);
 
 	m_stream = stream_alloc(0, 11, rate);
+	m_vgm_log = machine().vgm_logger().OpenDevice(VGMC_MSM5232, clock());
+	for (int i = 0; i < 8; i++)
+		m_vgm_log->SetProperty(0x10 | i, uint32_t(m_external_capacitance[i] * 1.0e+6 * 0x10000));
 
 	/* register with the save state system */
 	save_item(NAME(m_EN_out16));
@@ -133,6 +138,8 @@ void msm5232_device::set_capacitors(double cap1, double cap2, double cap3, doubl
 	m_external_capacitance[5] = cap6;
 	m_external_capacitance[6] = cap7;
 	m_external_capacitance[7] = cap8;
+	for (int i = 0; i < 8; i++)
+		m_vgm_log->SetProperty(0x10 | i, uint32_t(m_external_capacitance[i] * 1.0e+6 * 0x10000));
 }
 
 // Default chip clock is 2119040 Hz
@@ -319,6 +326,7 @@ void msm5232_device::write(offs_t offset, uint8_t data)
 		return;
 
 	m_stream->update();
+	m_vgm_log->Write(0x00, offset, data);
 
 	if (offset < 0x08) /* pitch */
 	{
@@ -701,6 +709,18 @@ void msm5232_device::set_clock(int clock)
 		init_tables();
 		m_stream->set_sample_rate(m_rate);
 	}
+	m_vgm_log->Write(0x00, 0x20, (m_chip_clock >>  0) & 0xFF);
+	m_vgm_log->Write(0x00, 0x21, (m_chip_clock >>  8) & 0xFF);
+	m_vgm_log->Write(0x00, 0x22, (m_chip_clock >> 16) & 0xFF);
+	m_vgm_log->Write(0x00, 0x23, (m_chip_clock >> 24) & 0xFF);
+}
+
+void msm5232_device::ext_vol_w(offs_t offset, uint8_t data)
+{
+	if (offset & 0x10)
+		m_vgm_log->Write(0, 0x1E + (offset & 0x0F), data);	// for ta7630_device::set_channel_volume()
+	else
+		m_vgm_log->Write(0, 0x10 + (offset & 0x0F), data);	// for msm5232_device::set_output_gain()
 }
 
 

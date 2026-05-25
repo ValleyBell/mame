@@ -129,6 +129,7 @@ private:
 	u8 read_sample(ics2115_voice& voice, u32 addr) { return m_cache.read_byte((voice.osc.saddr << 20) | (addr & 0xfffff)); }
 
 	sound_stream *m_stream;
+	VGMDeviceLog *m_vgm_log;
 
 	// internal state
 	memory_access<24, 0, 0, ENDIANNESS_LITTLE>::cache m_cache;

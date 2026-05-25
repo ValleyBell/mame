@@ -191,6 +191,7 @@ GFX check (these don't explicitly fails):
 #include "emu.h"
 #include "mega32x.h"
 #include "machine/timer.h"
+#include "vgmwrite.hpp"
 
 #define LOG_IRQ     (1U << 1)
 
@@ -852,6 +853,7 @@ uint16_t sega_32x_device::pwm_r(offs_t offset)
 
 void sega_32x_device::pwm_w(offs_t offset, uint16_t data)
 {
+	m_vgm_log->Write(offset, data, 0x00);
 	switch(offset)
 	{
 		case 0x00/2:
@@ -1698,6 +1700,8 @@ void sega_32x_device::device_start()
 
 	m_stream = stream_alloc(2, 2, 48000 * 4);
 	m_32x_pwm_timer = timer_alloc(FUNC(sega_32x_device::handle_pwm_callback), this);
+
+	m_vgm_log = machine().vgm_logger().OpenDevice(VGMC_PWM, clock());
 
 	m_32x_dram0 = std::make_unique<uint16_t[]>(0x40000/2);
 	m_32x_dram1 = std::make_unique<uint16_t[]>(0x40000/2);

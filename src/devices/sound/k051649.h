@@ -69,6 +69,8 @@ private:
 
 	sound_stream *m_stream;
 	u8 m_test; // test register
+
+	VGMDeviceLog* m_vgm_log;
 };
 
 DECLARE_DEVICE_TYPE(K051649, k051649_device)

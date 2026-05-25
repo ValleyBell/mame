@@ -352,6 +352,7 @@ void fortyl_state::sound_control_0_w(uint8_t data)
 //  popmessage("SND0 0=%02x 1=%02x 2=%02x 3=%02x", m_snd_ctrl0, m_snd_ctrl1, m_snd_ctrl2, m_snd_ctrl3);
 
 	/* this definitely controls main melody voice on 2'-1 and 4'-1 outputs */
+	m_msm->ext_vol_w(0x10, m_snd_ctrl0 >> 4);
 	for(int i=0;i<4;i++)
 		m_ta7630->set_channel_volume(m_msm,i,m_snd_ctrl0 >> 4);
 
@@ -365,6 +366,7 @@ void fortyl_state::sound_control_1_w(uint8_t data)
 {
 	m_snd_ctrl1 = data & 0xff;
 //  popmessage("SND1 0=%02x 1=%02x 2=%02x 3=%02x", m_snd_ctrl0, m_snd_ctrl1, m_snd_ctrl2, m_snd_ctrl3);
+	m_msm->ext_vol_w(0x11, m_snd_ctrl1 >> 4);
 	for(int i=0;i<4;i++)
 		m_ta7630->set_channel_volume(m_msm,i+4,m_snd_ctrl1 >> 4);
 

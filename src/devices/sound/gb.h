@@ -139,6 +139,7 @@ protected:
 	uint8_t m_wave_ram[2][0x10]; // 16 bytes, 2 banks for AGB
 	attotime m_last_updated;
 	emu_timer *m_timer;
+	VGMDeviceLog* m_vgm_log;
 
 	virtual void apu_power_off() = 0;
 	void sound_w_internal(int offset, uint8_t data);

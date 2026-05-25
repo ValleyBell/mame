@@ -147,6 +147,7 @@
 ***************************************************************************/
 
 #include "emu.h"
+#include "vgmwrite.hpp"
 #include "sn76496.h"
 
 sn76496_base_device::sn76496_base_device(
@@ -166,6 +167,7 @@ sn76496_base_device::sn76496_base_device(
 	: device_t(mconfig, type, tag, owner, clock)
 	, device_sound_interface(mconfig, *this)
 	, m_ready_handler(*this)
+	, m_vgm_log(VGMLogger::GetDummyChip())
 	, m_feedback_mask(feedbackmask)
 	, m_whitenoise_tap1(noisetap1)
 	, m_whitenoise_tap2(noisetap2)
@@ -234,6 +236,16 @@ void sn76496_base_device::device_start()
 	int sample_rate = clock() / 2;
 
 	m_sound = stream_alloc(0, (m_stereo ? 2 : 1), sample_rate);
+
+	m_vgm_log = machine().vgm_logger().OpenDevice(VGMC_SN76496, clock());
+	m_vgm_log->SetProperty(0x01, m_feedback_mask);
+	m_vgm_log->SetProperty(0x02, m_whitenoise_tap1);
+	m_vgm_log->SetProperty(0x03, m_whitenoise_tap2);
+	m_vgm_log->SetProperty(0x04, m_negate);
+	m_vgm_log->SetProperty(0x05, m_stereo);
+	m_vgm_log->SetProperty(0x06, m_clock_divider);
+	m_vgm_log->SetProperty(0x07, !m_sega_style_psg);
+	m_vgm_log->SetProperty(0x08, m_ncr_style_psg);
 
 	m_last_register = m_sega_style_psg ? 3 : 0; // Sega VDP PSG defaults to selected period reg for 2nd channel
 	for (int i = 0; i < 8; i += 2)
@@ -307,6 +319,7 @@ void sn76496_base_device::stereo_w(u8 data)
 {
 	m_sound->update();
 
+	m_vgm_log->Write(0x01, data, 0x00);
 	if (m_stereo)
 		m_stereo_mask = data;
 	else
@@ -328,6 +341,8 @@ void sn76496_base_device::write(u8 data)
 {
 	// update the output buffer before changing the registers
 	m_sound->update();
+
+	m_vgm_log->Write(0x00, data, 0x00);
 
 	int r;
 	if (data & 0x80)

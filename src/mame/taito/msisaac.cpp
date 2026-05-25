@@ -546,6 +546,8 @@ void msisaac_state::sound_control_0_w(uint8_t data)
 	m_snd_ctrl[0] = data;
 	LOGSOUND("SND0 0 = %2x 1 = %2x", m_snd_ctrl[0], m_snd_ctrl[1]);
 
+	m_msm->ext_vol_w(0x10, m_snd_ctrl[0] & 0xf);
+	m_msm->ext_vol_w(0x11, m_snd_ctrl[0] >> 4);
 	for (int i = 0; i < 4; i++)
 	{
 		// group1

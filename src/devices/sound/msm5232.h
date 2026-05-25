@@ -16,6 +16,7 @@ public:
 
 	void write(offs_t offset, uint8_t data);
 	void set_clock(int clock);
+	void ext_vol_w(offs_t offset, uint8_t data);
 
 protected:
 	// device-level overrides
@@ -58,6 +59,7 @@ private:
 
 	// internal state
 	sound_stream *m_stream;
+	VGMDeviceLog *m_vgm_log;
 
 	VOICE   m_voi[8];
 

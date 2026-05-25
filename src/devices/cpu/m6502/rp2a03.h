@@ -56,6 +56,7 @@ protected:
 
 	void apu_irq(int state);
 	uint8_t apu_read_mem(offs_t offset);
+	void* apu_mem_ptr(offs_t offset);
 };
 
 class rp2a03g_device : public rp2a03_device

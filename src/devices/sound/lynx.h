@@ -66,6 +66,7 @@ protected:
 
 	sound_stream *m_mixer_channel;
 	timer_delegate m_timer_delegate;   // this calls lynx_timer_count_down from the driver state
+	VGMDeviceLog *m_vgm_log;
 
 	std::unique_ptr<int[]> m_shift_mask;
 	std::unique_ptr<int[]> m_shift_xor;

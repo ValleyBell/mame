@@ -12,6 +12,7 @@
 */
 
 #include "emu.h"
+#include "vgmwrite.hpp"
 #include "msm5205.h"
 
 /*
@@ -62,6 +63,7 @@ msm5205_device::msm5205_device(const machine_config &mconfig, const char *tag, d
 msm5205_device::msm5205_device(const machine_config &mconfig, device_type type, const char *tag, device_t *owner, u32 clock, u8 dac_bits)
 	: device_t(mconfig, type, tag, owner, clock)
 	, device_sound_interface(mconfig, *this)
+	, m_vgm_log(VGMLogger::GetDummyChip())
 	, m_s1(false)
 	, m_s2(false)
 	, m_bitwidth(4)
@@ -90,6 +92,14 @@ void msm5205_device::device_start()
 	m_stream = stream_alloc(0, 1, clock());
 	m_vck_timer = timer_alloc(FUNC(msm5205_device::toggle_vck), this);
 	m_capture_timer = timer_alloc(FUNC(msm5205_device::update_adpcm), this);
+
+	m_vgm_log = machine().vgm_logger().OpenDevice(VGMC_MSM5205, clock());
+	if (type() == MSM6585)
+		m_vgm_log->SetProperty(0x00, 0x01);	// MSM6585
+	else
+		m_vgm_log->SetProperty(0x00, 0x00);	// MSM5205
+	m_vgm_log->SetProperty(0x01, (m_s1 << 1) | (m_s2 << 0));
+	m_vgm_log->SetProperty(0x02, (m_bitwidth == 4) ? 1 : 0);
 
 	// register for save states
 	save_item(NAME(m_data));
@@ -215,6 +225,15 @@ TIMER_CALLBACK_MEMBER(msm5205_device::update_adpcm)
 }
 
 
+void msm5205_device::set_prescaler_selector(int select)
+{
+	m_s1 = BIT(select, 0);
+	m_s2 = BIT(select, 1);
+	m_bitwidth = BIT(select, 2) ? 4 : 3;
+	m_vgm_log->SetProperty(0x01, (m_s1 << 1) | (m_s2 << 0));
+	m_vgm_log->SetProperty(0x02, (m_bitwidth == 4) ? 1 : 0);
+}
+
 /*
  *    Handle an update of the VCK status of a chip (1 is reset ON, 0 is reset OFF)
  *    This function can use selector = MSM5205_SEX only
@@ -230,6 +249,7 @@ void msm5205_device::vclk_w(int state)
 			m_capture_timer->adjust(attotime::from_ticks(6, clock())); // 15.6 usec at 384KHz
 		m_vck = state;
 	}
+	m_vgm_log->Write(0x00, 0x02, state);
 }
 
 
@@ -239,6 +259,7 @@ void msm5205_device::vclk_w(int state)
 
 void msm5205_device::reset_w(int state)
 {
+	m_vgm_log->Write(0x00, 0x00, state);
 	m_reset = state;
 }
 
@@ -249,6 +270,7 @@ void msm5205_device::reset_w(int state)
 
 void msm5205_device::data_w(u8 data)
 {
+	m_vgm_log->Write(0x00, 0x01, data);
 	if (m_bitwidth == 4)
 		m_data = data & 0x0f;
 	else
@@ -295,6 +317,8 @@ void msm5205_device::playmode_w(u8 data)
 		m_stream->update();
 		m_bitwidth = bitwidth;
 	}
+	m_vgm_log->Write(0x00, 0x04, (m_s1 << 1) | (m_s2 << 0));
+	m_vgm_log->Write(0x00, 0x05, (m_bitwidth == 4) ? 1 : 0);
 }
 
 void msm5205_device::s1_w(int state)
@@ -305,6 +329,7 @@ void msm5205_device::s1_w(int state)
 		m_s1 = state;
 		notify_clock_changed();
 	}
+	m_vgm_log->Write(0x00, 0x04, (m_s1 << 1) | (m_s2 << 0));
 }
 
 void msm5205_device::s2_w(int state)

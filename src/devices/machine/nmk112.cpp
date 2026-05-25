@@ -10,6 +10,8 @@
     to play a sample from a different bank at the same time. */
 
 #include "emu.h"
+#include "vgmwrite.hpp"
+#include "sound/okim6295.h"
 #include "nmk112.h"
 
 #include "bus/generic/slot.h"
@@ -24,6 +26,7 @@ nmk112_device::nmk112_device(const machine_config &mconfig, const char *tag, dev
 	, m_rom(*this, { finder_base::DUMMY_TAG, finder_base::DUMMY_TAG })
 	, m_page_mask(0xff)
 	, m_bankmask{ 0, 0 }
+	, m_vgm_log{ nullptr, nullptr }
 {
 }
 
@@ -64,6 +67,15 @@ void nmk112_device::device_start()
 				if (is_paged(c))
 					m_tablebank[c][i]->set_entry(0);
 			}
+
+			m_vgm_log[c] = machine().device<okim6295_device>(m_rom[c].finder_tag())->get_vgmlog_dev();
+			logerror("NMK112 '%s': VGM DevPtr %p\n", m_rom[c].finder_tag(), m_vgm_log[c]);
+			if (is_paged(c))
+				m_vgm_log[c]->Write(0x00, 0x0E, 0x81);
+			else
+				m_vgm_log[c]->Write(0x00, 0x0E, 0x01);
+			// TODO: Is this still required?
+			machine().vgm_logger().ChangeROMData(size + 0x40000, m_rom[c], size, m_rom[c] + 0x40000);
 		}
 	}
 }
@@ -87,6 +99,9 @@ void nmk112_device::okibank_w(offs_t offset, u8 data)
 {
 	const int chip = BIT(offset, 2);
 	const int banknum = offset & 3;
+
+	if (m_vgm_log[chip] != nullptr)
+		m_vgm_log[chip]->Write(0x00, 0x10 | banknum, data);
 
 	if (m_bankmask[chip])
 	{

@@ -31,6 +31,7 @@ protected:
 private:
 	required_region_ptr<u8> m_sound_prom;
 	sound_stream *m_stream;
+	VGMDeviceLog *m_vgm_log;
 
 	struct voice_t
 	{

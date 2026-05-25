@@ -78,6 +78,7 @@ const options_entry emu_options::s_option_entries[] =
 	{ OPTION_MNGWRITE,                                   nullptr,     core_options::option_type::PATH,       "optional filename to write a MNG movie of the current session" },
 	{ OPTION_AVIWRITE,                                   nullptr,     core_options::option_type::PATH,       "optional filename to write an AVI movie of the current session" },
 	{ OPTION_WAVWRITE,                                   nullptr,     core_options::option_type::PATH,       "optional filename to write a WAV file of the current session" },
+	{ OPTION_VGMWRITE,                                   "0",         core_options::option_type::INTEGER,    "enable to write a VGM of the current session (name is based on romname)" },
 	{ OPTION_SNAPNAME,                                   "%g/%i",     core_options::option_type::STRING,     "override of the default snapshot/movie naming; %g == gamename, %i == index" },
 	{ OPTION_SNAPSIZE,                                   "auto",      core_options::option_type::STRING,     "specify snapshot/movie resolution (<width>x<height>) or 'auto' to use minimal size " },
 	{ OPTION_SNAPVIEW,                                   "auto",      core_options::option_type::STRING,     "snapshot/movie view - 'auto' for default, or 'native' for per-screen pixel-aspect views" },

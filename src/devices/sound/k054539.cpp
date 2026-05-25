@@ -10,6 +10,7 @@
 *********************************************************/
 
 #include "emu.h"
+#include "vgmwrite.hpp"
 #include "k054539.h"
 
 //#define VERBOSE 1
@@ -24,6 +25,7 @@ k054539_device::k054539_device(const machine_config &mconfig, const char *tag, d
 	, device_rom_interface(mconfig, *this)
 	, m_flags(RESET_FLAGS)
 	, m_stream(nullptr)
+	, m_vgm_log(VGMLogger::GetDummyChip())
 	, m_timer(nullptr)
 	, m_timer_handler(*this)
 	, m_apan_cb(*this)
@@ -77,6 +79,7 @@ void k054539_device::init_flags(int flags)
 	if(started())
 		m_stream->update();
 
+	m_vgm_log->SetProperty(0x01, flags);
 	m_flags = flags;
 }
 
@@ -328,6 +331,22 @@ void k054539_device::init_chip()
 
 	m_stream = stream_alloc(0, 2, clock() / 384);
 
+	m_vgm_log = machine().vgm_logger().OpenDevice(VGMC_K054539, clock());
+	m_vgm_log->SetProperty(0x01, m_flags);
+	if (memregion(DEVICE_SELF) != nullptr)
+	{
+		m_vgm_log->DumpSampleROM(0x01, memregion(DEVICE_SELF));
+	}
+	else
+	{
+		logerror("ROM Tag: %s\n", get_device_rom_name());
+		auto memreg = get_device_rom();
+		if (memreg != nullptr)
+			m_vgm_log->DumpSampleROM(0x01, memreg);
+		else
+			m_vgm_log->DumpSampleROM(0x01, space());	// try to look up the ROM via space
+	}
+
 	save_item(NAME(m_voltab));
 	save_item(NAME(m_pantab));
 	save_item(NAME(m_gain));
@@ -346,6 +365,8 @@ void k054539_device::init_chip()
 void k054539_device::write(offs_t offset, u8 data)
 {
 	m_stream->update();
+
+	m_vgm_log->Write(0x00, offset, data);
 
 	if(0) {
 		int voice, reg;

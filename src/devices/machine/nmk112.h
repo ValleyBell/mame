@@ -43,6 +43,7 @@ private:
 	memory_bank_array_creator<4> m_samplebank[2];
 	memory_bank_array_creator<4> m_tablebank[2];
 	optional_region_ptr_array<uint8_t, 2> m_rom;
+	VGMDeviceLog* m_vgm_log[2];
 
 	// internal state
 

@@ -31,6 +31,7 @@ TODO:
 ***************************************************************************************/
 
 #include "emu.h"
+#include "vgmwrite.hpp"
 #include "gb.h"
 
 
@@ -66,6 +67,7 @@ DEFINE_DEVICE_TYPE(AGB_APU, agb_apu_device, "agb_apu", "AGB APU")
 gameboy_sound_device::gameboy_sound_device(const machine_config &mconfig, device_type type, const char *tag, device_t *owner, uint32_t clock)
 	: device_t(mconfig, type, tag, owner, clock)
 	, device_sound_interface(mconfig, *this)
+	, m_vgm_log(VGMLogger::GetDummyChip())
 {
 }
 
@@ -104,6 +106,10 @@ void gameboy_sound_device::device_start()
 	// TODO: choose values that will guarantee the initial apu_power_off will produce the correct state
 	m_snd_control.on = false;
 	std::fill(std::begin(m_snd_regs), std::end(m_snd_regs), 0);
+
+	m_vgm_log = machine().vgm_logger().OpenDevice(VGMC_GBSOUND, clock());
+	if (type() == CGB04_APU)
+		m_vgm_log->SetProperty(0x00, 0x01);	// set GameBoy Color flag
 
 	save_item(NAME(m_last_updated));
 	save_item(NAME(m_snd_regs));
@@ -737,6 +743,7 @@ void dmg_apu_device::wave_w(offs_t offset, u8 data)
 	m_channel->update();
 	update_state();
 
+	m_vgm_log->Write(0x00, AUD3W0 + offset, data);
 	if (m_snd[2].on)
 	{
 		if (m_snd[2].sample_reading)
@@ -756,6 +763,7 @@ void cgb04_apu_device::wave_w(offs_t offset, u8 data)
 	m_channel->update();
 	update_state();
 
+	m_vgm_log->Write(0x00, AUD3W0 + offset, data);
 	if (m_snd[2].on)
 	{
 		m_wave_ram[0][(m_snd[2].offset / 2)] = data;
@@ -771,6 +779,7 @@ void agb_apu_device::wave_w(offs_t offset, u8 data)
 	m_channel->update();
 	update_state();
 
+	m_vgm_log->Write(0x00, AUD3W0 + offset, data);
 	if (!m_snd[2].on)
 	{
 		m_wave_ram[m_snd[2].bank ^ 1][offset & 0xf] = data;
@@ -783,6 +792,7 @@ void dmg_apu_device::sound_w(offs_t offset, u8 data)
 	m_channel->update();
 	update_state();
 
+	m_vgm_log->Write(0x00, offset, data);
 	/* Only register NR52 is accessible if the sound controller is disabled */
 	if (!m_snd_control.on && offset != NR52 && offset != NR11 && offset != NR21 && offset != NR31 && offset != NR41)
 		return;
@@ -797,6 +807,7 @@ void cgb04_apu_device::sound_w(offs_t offset, u8 data)
 	m_channel->update();
 	update_state();
 
+	m_vgm_log->Write(0x00, offset, data);
 	/* Only register NR52 is accessible if the sound controller is disabled */
 	if (!m_snd_control.on && offset != NR52)
 		return;

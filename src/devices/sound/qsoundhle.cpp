@@ -20,6 +20,7 @@
 #define QSOUND_LLE
 #endif
 
+#include "vgmwrite.hpp"
 #include "qsoundhle.h"
 
 #include "qsound.h"
@@ -62,6 +63,7 @@ qsound_hle_device::qsound_hle_device(const machine_config &mconfig, const char *
 	, device_rom_interface(mconfig, *this)
 	, m_stream(nullptr)
 	, m_dsp_rom(*this, "dsp")
+	, m_vgm_log(VGMLogger::GetDummyChip())
 	, m_data_latch(0)
 {
 }
@@ -93,6 +95,9 @@ void qsound_hle_device::rom_bank_pre_change()
 void qsound_hle_device::device_start()
 {
 	m_stream = stream_alloc(0, 2, clock() / 2 / 1248); // DSP program uses 1248 machine cycles per iteration
+
+	m_vgm_log = machine().vgm_logger().OpenDevice(VGMC_QSOUND, clock());
+	m_vgm_log->DumpSampleROM(0x01, memregion(DEVICE_SELF));
 
 	init_register_map();
 
@@ -204,6 +209,7 @@ void qsound_hle_device::qsound_w(offs_t offset, uint8_t data)
 
 		case 2:
 			m_stream->update();
+			m_vgm_log->Write(0x00, m_data_latch, data);
 			write_data(data, m_data_latch);
 			break;
 
