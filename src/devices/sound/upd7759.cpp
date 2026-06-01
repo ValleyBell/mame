@@ -311,6 +311,12 @@ void upd7759_device::device_reset()
 	upd775x_device::device_reset();
 
 	m_timer->adjust(attotime::never);
+	if (!m_md)
+	{
+		m_mode = MODE_SLAVE;
+		m_state = STATE_START;
+		m_timer->adjust(attotime::zero);
+	}
 
 	if (m_drq)
 	{
