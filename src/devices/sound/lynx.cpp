@@ -110,6 +110,7 @@ lynx_sound_device::lynx_sound_device(const machine_config &mconfig, device_type 
 	: device_t(mconfig, type, tag, owner, clock)
 	, device_sound_interface(mconfig, *this)
 	, m_timer_delegate(*this)
+	, m_vgm_log(VGMLogger::GetDummyChip())
 {
 }
 
@@ -179,6 +180,7 @@ void lynx_sound_device::device_start()
 {
 	m_mixer_channel = stream_alloc(0, 1, clock() / 16);
 	m_timer_delegate.resolve_safe();
+	m_vgm_log = machine().vgm_logger().OpenDevice(VGMC_MIKEY, clock());
 	init();
 	register_save();
 }

@@ -95,10 +95,15 @@ void msm5205_device::device_start()
 
 	m_vgm_log = machine().vgm_logger().OpenDevice(VGMC_MSM5205, clock());
 	if (type() == MSM6585)
+	{
 		m_vgm_log->SetProperty(0x00, 0x01);	// MSM6585
+		m_vgm_log->SetProperty(0x01, (m_s2 << 1) | (m_s1 << 0));
+	}
 	else
+	{
 		m_vgm_log->SetProperty(0x00, 0x00);	// MSM5205
-	m_vgm_log->SetProperty(0x01, (m_s1 << 1) | (m_s2 << 0));
+		m_vgm_log->SetProperty(0x01, (m_s1 << 1) | (m_s2 << 0));
+	}
 	m_vgm_log->SetProperty(0x02, (m_bitwidth == 4) ? 1 : 0);
 
 	// register for save states
@@ -230,7 +235,10 @@ void msm5205_device::set_prescaler_selector(int select)
 	m_s1 = BIT(select, 0);
 	m_s2 = BIT(select, 1);
 	m_bitwidth = BIT(select, 2) ? 4 : 3;
-	m_vgm_log->SetProperty(0x01, (m_s1 << 1) | (m_s2 << 0));
+	if (type() == MSM6585)
+		m_vgm_log->SetProperty(0x01, (m_s2 << 1) | (m_s1 << 0));
+	else
+		m_vgm_log->SetProperty(0x01, (m_s1 << 1) | (m_s2 << 0));
 	m_vgm_log->SetProperty(0x02, (m_bitwidth == 4) ? 1 : 0);
 }
 
@@ -317,7 +325,10 @@ void msm5205_device::playmode_w(u8 data)
 		m_stream->update();
 		m_bitwidth = bitwidth;
 	}
-	m_vgm_log->Write(0x00, 0x04, (m_s1 << 1) | (m_s2 << 0));
+	if (type() == MSM6585)
+		m_vgm_log->Write(0x00, 0x04, (m_s2 << 1) | (m_s1 << 0));
+	else
+		m_vgm_log->Write(0x00, 0x04, (m_s1 << 1) | (m_s2 << 0));
 	m_vgm_log->Write(0x00, 0x05, (m_bitwidth == 4) ? 1 : 0);
 }
 
@@ -329,7 +340,10 @@ void msm5205_device::s1_w(int state)
 		m_s1 = state;
 		notify_clock_changed();
 	}
-	m_vgm_log->Write(0x00, 0x04, (m_s1 << 1) | (m_s2 << 0));
+	if (type() == MSM6585)
+		m_vgm_log->Write(0x00, 0x04, (m_s2 << 1) | (m_s1 << 0));
+	else
+		m_vgm_log->Write(0x00, 0x04, (m_s1 << 1) | (m_s2 << 0));
 }
 
 void msm5205_device::s2_w(int state)
@@ -340,6 +354,10 @@ void msm5205_device::s2_w(int state)
 		m_s2 = state;
 		notify_clock_changed();
 	}
+	if (type() == MSM6585)
+		m_vgm_log->Write(0x00, 0x04, (m_s2 << 1) | (m_s1 << 0));
+	else
+		m_vgm_log->Write(0x00, 0x04, (m_s1 << 1) | (m_s2 << 0));
 }
 
 
